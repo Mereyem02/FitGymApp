@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="4dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/imgCoachProfile"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:src="@tools:sample/avatars" />
+
+        <TextView
+            android:id="@+id/txtCoachName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:textColor="@android:color/black"
+            app:layout_constraintStart_toEndOf="@id/imgCoachProfile"
+            app:layout_constraintTop_toTopOf="@id/imgCoachProfile"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="Sarah Martin" />
+
+        <ImageView
+            android:id="@+id/iconStar"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@drawable/ic_star"
+            app:tint="#FFC107"
+            app:layout_constraintStart_toStartOf="@id/txtCoachName"
+            app:layout_constraintTop_toBottomOf="@id/txtCoachName"
+            android:layout_marginTop="4dp"/>
+
+        <TextView
+            android:id="@+id/txtCoachRating"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:textSize="14sp"
+            app:layout_constraintStart_toEndOf="@id/iconStar"
+            app:layout_constraintTop_toTopOf="@id/iconStar"
+            app:layout_constraintBottom_toBottomOf="@id/iconStar"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="4.9 (234 avis)" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroupSpecialties"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/imgCoachProfile">
+        </com.google.android.material.chip.ChipGroup>
+
+        <TextView
+            android:id="@+id/txtCoachDescription"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="14sp"
+            android:lineSpacingExtra="4dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/chipGroupSpecialties"
+            tools:text="Professeur de yoga certifiée avec 8 ans d'expérience. Passionnée par le bien-être holistique..." />
+
+        <TextView
+            android:id="@+id/txtSessionCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textSize="14sp"
+            android:textStyle="italic"
+            android:textColor="@color/design_default_color_primary"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/txtCoachDescription"
+            tools:text="45 séances" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSupprimer"
+            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Supprimer"
+            android:textColor="#E53935"
+            app:icon="@drawable/ic_delete"
+            app:iconTint="#E53935"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/txtSessionCount"
+            android:layout_marginTop="8dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnModifier"
+            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Modifier"
+            app:icon="@drawable/ic_edit"
+            app:layout_constraintEnd_toStartOf="@id/btnSupprimer"
+            app:layout_constraintTop_toTopOf="@id/btnSupprimer"
+            app:layout_constraintBottom_toBottomOf="@id/btnSupprimer"
+            android:layout_marginEnd="8dp"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>
