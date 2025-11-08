@@ -1,121 +1,213 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
+<androidx.cardview.widget.CardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="16dp"
-    android:layout_marginVertical="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="4dp">
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="3dp"
+    app:cardUseCompatPadding="true"
+    android:backgroundTint="@color/app_background"
+    android:foreground="?attr/selectableItemBackground">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="horizontal"
         android:padding="16dp">
 
+        <!-- PHOTO DU COACH (Grande photo circulaire à gauche) -->
         <de.hdodenhof.circleimageview.CircleImageView
-            android:id="@+id/imgCoachProfile"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:src="@tools:sample/avatars" />
+            android:id="@+id/coachAvatar"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:contentDescription="Avatar du coach"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_placeholder"
+            app:civ_border_width="0dp" />
 
-        <TextView
-            android:id="@+id/txtCoachName"
+        <!-- CONTENEUR INFORMATIONS À DROITE -->
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:textStyle="bold"
-            android:textSize="18sp"
-            android:textColor="@android:color/black"
-            app:layout_constraintStart_toEndOf="@id/imgCoachProfile"
-            app:layout_constraintTop_toTopOf="@id/imgCoachProfile"
-            app:layout_constraintEnd_toEndOf="parent"
-            tools:text="Sarah Martin" />
+            android:layout_weight="1"
+            android:orientation="vertical">
 
-        <ImageView
-            android:id="@+id/iconStar"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:src="@drawable/ic_star"
-            app:tint="#FFC107"
-            app:layout_constraintStart_toStartOf="@id/txtCoachName"
-            app:layout_constraintTop_toBottomOf="@id/txtCoachName"
-            android:layout_marginTop="4dp"/>
+            <!-- NOM DU COACH -->
 
-        <TextView
-            android:id="@+id/txtCoachRating"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:textSize="14sp"
-            app:layout_constraintStart_toEndOf="@id/iconStar"
-            app:layout_constraintTop_toTopOf="@id/iconStar"
-            app:layout_constraintBottom_toBottomOf="@id/iconStar"
-            app:layout_constraintEnd_toEndOf="parent"
-            tools:text="4.9 (234 avis)" />
+            <TextView
+                android:id="@+id/coachName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="Marc Dubois"
+                android:textColor="#1F2937"
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/chipGroupSpecialties"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/imgCoachProfile">
-        </com.google.android.material.chip.ChipGroup>
+            <!-- NOTE ET AVIS -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/txtCoachDescription"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textSize="14sp"
-            android:lineSpacingExtra="4dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/chipGroupSpecialties"
-            tools:text="Professeur de yoga certifiée avec 8 ans d'expérience. Passionnée par le bien-être holistique..." />
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:contentDescription="Étoile"
+                    android:src="@drawable/ic_star"
+                    app:tint="#FACC15" />
 
-        <TextView
-            android:id="@+id/txtSessionCount"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:textSize="14sp"
-            android:textStyle="italic"
-            android:textColor="@color/design_default_color_primary"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/txtCoachDescription"
-            tools:text="45 séances" />
+                <TextView
+                    android:id="@+id/coachRating"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="4.8"
+                    android:textColor="#1F2937"
+                    android:textSize="14sp" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSupprimer"
-            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Supprimer"
-            android:textColor="#E53935"
-            app:icon="@drawable/ic_delete"
-            app:iconTint="#E53935"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/txtSessionCount"
-            android:layout_marginTop="8dp"/>
+                <TextView
+                    android:id="@+id/coachReviewCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text=""
+                    android:textColor="#6B7280"
+                    android:textSize="12sp" />
+            </LinearLayout>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnModifier"
-            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Modifier"
-            app:icon="@drawable/ic_edit"
-            app:layout_constraintEnd_toStartOf="@id/btnSupprimer"
-            app:layout_constraintTop_toTopOf="@id/btnSupprimer"
-            app:layout_constraintBottom_toBottomOf="@id/btnSupprimer"
-            android:layout_marginEnd="8dp"/>
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
-</com.google.android.material.card.MaterialCardView>
+            <!-- DESCRIPTION -->
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupSpecialties"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:chipSpacingHorizontal="8dp"
+                app:chipSpacingVertical="4dp"
+                app:singleLine="false">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip1"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="false"
+                    android:clickable="false"
+                    android:text="Musculation"
+                    android:textColor="#374151"
+                    android:textSize="12sp"
+                    app:chipBackgroundColor="#F3F4F6"
+                    app:chipMinHeight="32dp"
+                    app:chipStrokeColor="#E5E7EB"
+                    app:chipStrokeWidth="1dp" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip2"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="false"
+                    android:clickable="false"
+                    android:text="CrossFit"
+                    android:textColor="#374151"
+                    android:textSize="12sp"
+                    app:chipBackgroundColor="#F3F4F6"
+                    app:chipMinHeight="32dp"
+                    app:chipStrokeColor="#E5E7EB"
+                    app:chipStrokeWidth="1dp" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip3"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="false"
+                    android:clickable="false"
+                    android:text="Nutrition"
+                    android:textColor="#374151"
+                    android:textSize="12sp"
+                    app:chipBackgroundColor="#F3F4F6"
+                    app:chipMinHeight="32dp"
+                    app:chipStrokeColor="#E5E7EB"
+                    app:chipStrokeWidth="1dp" />
+            </com.google.android.material.chip.ChipGroup>
+
+            <TextView
+                android:id="@+id/coachDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:lineSpacingExtra="2dp"
+                android:text=""
+                android:textColor="#6B7280"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/coachSpeciality"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text=""
+                android:textColor="#6B7280"
+                android:textSize="12sp" />
+
+            <!-- NOMBRE DE SÉANCES -->
+            <TextView
+                android:id="@+id/coachSessionsCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text=""
+                android:textColor="#6B7280"
+                android:textSize="12sp" />
+
+            <!-- BOUTONS D'ACTION -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnModifier"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:text="Modifier"
+                    android:textAllCaps="false"
+                    android:textColor="#9C27B0"
+                    android:textSize="12sp"
+                    app:icon="@drawable/ic_edit"
+                    app:iconSize="16dp"
+                    app:iconTint="#9C27B0"
+                    app:strokeColor="#9C27B0"
+                    app:strokeWidth="1dp" />
+
+                <Button
+                    android:id="@+id/btnSupprimer"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:text="Supprimer"
+                    android:textAllCaps="false"
+                    android:textColor="#B1041A"
+                    android:textSize="12sp"
+                    app:icon="@drawable/ic_delete"
+                    app:iconSize="16dp"
+                    app:iconTint="#CE1010"
+                    app:strokeColor="#DE0D0D"
+                    app:strokeWidth="1dp" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

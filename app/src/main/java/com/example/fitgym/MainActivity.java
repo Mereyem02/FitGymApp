@@ -1,24 +1,29 @@
 package com.example.fitgym;
 
-import android.os.Bundle;
-
-import androidx.activity.EdgeToEdge;
+import com.example.fitgym.R;
+import com.example.fitgym.ui.admin.LoginAdminActivity;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-import com.google.firebase.FirebaseApp;
-import android.util.Log;
+import android.content.Intent;
+import android.os.Bundle;
+import android.widget.Button;
 
 public class MainActivity extends AppCompatActivity {
+
+    Button btnAdmin, btnClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        FirebaseApp.initializeApp(this);
-        Log.d("Firebase", "Firebase initialisé avec succès !");
-    }
+        btnAdmin = findViewById(R.id.btnAdmin);
+        btnClient = findViewById(R.id.btnClient);
 
+        btnAdmin.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, com.example.fitgym.ui.admin.LoginAdminActivity.class);
+            startActivity(intent);
+        });
+
+
+    }
 }
