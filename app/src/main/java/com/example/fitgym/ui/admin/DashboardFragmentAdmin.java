@@ -1,6 +1,6 @@
 package com.example.fitgym.ui.admin;
 
-import com.example.fitgymapp.R;
+import com.example.fitgym.R;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;

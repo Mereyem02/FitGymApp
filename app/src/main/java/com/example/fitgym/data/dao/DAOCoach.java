@@ -1,6 +1,6 @@
 package com.example.fitgym.data.dao;
 
-import static com.example.fitgym.data.db.DBHelper.CREATE_TABLE_COACH;
+import static com.example.fitgym.data.db.DatabaseHelper.CREATE_TABLE_COACH;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -102,11 +102,12 @@ public class DAOCoach extends SQLiteOpenHelper {
         return rows;
     }
 
-    public int supprimerCoach(int id) {
+    public int supprimerCoach(String id) {
         SQLiteDatabase db = this.getWritableDatabase();
-        db.delete(TABLE_COACH, "id = ?", new String[]{String.valueOf(id)});
+        // L'argument est maintenant un String
+        int rows = db.delete(TABLE_COACH, "id = ?", new String[]{id});
         db.close();
-        return id; // Vous retourniez l'id, je garde cette logique
+        return rows;
     }
 
     public List<Coach> listerCoachs() {
@@ -127,19 +128,18 @@ public class DAOCoach extends SQLiteOpenHelper {
     }
 
     // --- NOUVELLE FONCTION REQUISE PAR LE VIEWMODEL ---
-    public Coach obtenirCoachParId(int id) {
+    // Dans DAOCoach.java...
+    public Coach obtenirCoachParId(String id) { // Accepte un String
         SQLiteDatabase db = this.getReadableDatabase();
         Coach coach = null;
 
-        // Utilise db.query pour une requête plus propre avec arguments
         Cursor cursor = db.query(TABLE_COACH,
-                null, // null = toutes les colonnes
-                "id = ?", // clause WHERE
-                new String[]{String.valueOf(id)}, // arguments
+                null,
+                "id = ?", // La base de données fait le filtre
+                new String[]{id}, // Avec l'ID
                 null, null, null);
 
         if (cursor.moveToFirst()) {
-            // On réutilise la même logique de construction
             coach = construireCoachDepuisCursor(cursor);
         }
 
@@ -167,7 +167,7 @@ public class DAOCoach extends SQLiteOpenHelper {
         Coach c = new Coach();
 
         // Remplir l'objet Coach
-        c.setId(cursor.getInt(idIndex));
+        c.setId(cursor.getString(idIndex));
         c.setNom(cursor.getString(nomIndex));
         c.setPrenom(cursor.getString(prenomIndex));
         c.setPhotoUrl(cursor.getString(photoUrlIndex));

@@ -43,7 +43,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="4dp"
-                android:text="Marc Dubois"
                 android:textColor="#1F2937"
                 android:textSize="16sp"
                 android:textStyle="bold" />
@@ -68,7 +67,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
-                    android:text="4.8"
                     android:textColor="#1F2937"
                     android:textSize="14sp" />
 
@@ -101,7 +99,6 @@
                     android:layout_height="wrap_content"
                     android:checkable="false"
                     android:clickable="false"
-                    android:text="Musculation"
                     android:textColor="#374151"
                     android:textSize="12sp"
                     app:chipBackgroundColor="#F3F4F6"
@@ -116,7 +113,6 @@
                     android:layout_height="wrap_content"
                     android:checkable="false"
                     android:clickable="false"
-                    android:text="CrossFit"
                     android:textColor="#374151"
                     android:textSize="12sp"
                     app:chipBackgroundColor="#F3F4F6"
@@ -131,7 +127,6 @@
                     android:layout_height="wrap_content"
                     android:checkable="false"
                     android:clickable="false"
-                    android:text="Nutrition"
                     android:textColor="#374151"
                     android:textSize="12sp"
                     app:chipBackgroundColor="#F3F4F6"
@@ -146,7 +141,6 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
                 android:lineSpacingExtra="2dp"
-                android:text=""
                 android:textColor="#6B7280"
                 android:textSize="12sp" />
 

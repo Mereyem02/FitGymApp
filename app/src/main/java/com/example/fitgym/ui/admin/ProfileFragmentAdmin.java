@@ -26,10 +26,9 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.fragment.app.Fragment;
 
-import com.example.fitgym.ui.admin.DatabaseHelper;
-import com.example.fitgym.ui.admin.FirebaseHelper;
+import com.example.fitgym.data.db.DatabaseHelper;
 import com.example.fitgym.R;
-import com.example.fitgym.ui.admin.ProfileFragmentAdmin;
+import com.example.fitgym.data.db.FirebaseHelper;
 import com.example.fitgym.data.model.Admin;
 
 import java.io.ByteArrayOutputStream;

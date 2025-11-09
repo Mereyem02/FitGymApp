@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- Couleur de fond légèrement grise -->
+    <solid android:color="@android:color/transparent" />
+
+    <!-- Bord arrondi -->
+    <corners android:radius="12dp" />
+
+    <!-- Bordure violette fine -->
+    <stroke
+        android:width="1.5dp"
+        android:color="@color/purple_500" />
+
+    <!-- Légère marge interne -->
+    <padding
+        android:left="6dp"
+        android:top="6dp"
+        android:right="6dp"
+        android:bottom="6dp" />
+</shape>

@@ -53,11 +53,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="Nom complet *"
-                    app:boxBackgroundMode="outline"
-                    app:boxCornerRadiusTopStart="12dp"
-                    app:boxCornerRadiusTopEnd="12dp"
-                    app:boxCornerRadiusBottomStart="12dp"
-                    app:boxCornerRadiusBottomEnd="12dp">
+                    style="@style/RoundedTextInputLayout"
+                    >
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/inputNomComplet"
@@ -71,8 +68,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="Spécialités (ex: Yoga, Pilates)"
-                    app:boxBackgroundMode="outline"
-                    app:boxCornerRadius="12dp">
+                    style="@style/RoundedTextInputLayout"
+                    >
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/inputSpecialites"
@@ -86,8 +83,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="Biographie *"
-                    app:boxBackgroundMode="outline"
-                    app:boxCornerRadius="12dp">
+                    style="@style/RoundedTextInputLayout"
+                    >
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/inputBiographie"
@@ -98,22 +95,35 @@
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <!-- URL de l'image -->
+
+
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:boxBackgroundMode="outline"
-                    app:boxCornerRadius="12dp">
+                    style="@style/RoundedTextInputLayout"
+                    >
 
-                    <com.google.android.material.textfield.TextInputEditText
+                    <Button
                         android:id="@+id/inputUrlImage"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:focusable="false"
                         android:clickable="true"
                         android:inputType="none"
+                        style="@style/Theme.Design"
+                        android:textColor="@color/purple_active"
                         android:hint="Cliquez pour choisir une image"/>
                 </com.google.android.material.textfield.TextInputLayout>
-
+                <ImageView
+                    android:id="@+id/imagePreview1"
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_gravity="center"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_placeholder"
+                    android:contentDescription="Aperçu de l'image"
+                    android:background="@drawable/bg_photo_imageview" />
 
             </LinearLayout>
         </ScrollView>

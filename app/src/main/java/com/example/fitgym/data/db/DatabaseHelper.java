@@ -1,4 +1,4 @@
-package com.example.fitgym.ui.admin;
+package com.example.fitgym.data.db;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
@@ -102,5 +102,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.update(TABLE_ADMIN, cv, null, null);
         db.close();
     }
+    public static final String CREATE_TABLE_COACH = "CREATE TABLE IF NOT EXISTS Coach (" +
+            "id TEXT PRIMARY KEY," +
+            "nom TEXT NOT NULL," +
+            "prenom TEXT NOT NULL," +
+            "specialites TEXT," +      // Stockera la liste comme "Yoga,Muscu"
+            "photo_url TEXT," +
+            "contact TEXT," +
+            "description TEXT," +     // NOUVEAU
+            "rating REAL," +          // NOUVEAU (REAL pour les nombres à virgule)
+            "review_count INTEGER," + // NOUVEAU
+            "session_count INTEGER" + // NOUVEAU
+            ");";
 
 }

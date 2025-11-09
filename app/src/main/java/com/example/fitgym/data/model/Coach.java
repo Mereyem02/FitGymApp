@@ -3,7 +3,7 @@ package com.example.fitgym.data.model;
 import java.util.List; // <-- N'OUBLIEZ PAS CET IMPORT
 
 public class Coach {
-    private int id;
+    private String id;
     private String nom;
     private String prenom;
     private String photoUrl; // Gardé de votre code
@@ -34,8 +34,8 @@ public class Coach {
 
     // --- Getters et Setters ---
 
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
 
     public String getNom() { return nom; }
     public void setNom(String nom) { this.nom = nom; }
@@ -67,4 +67,9 @@ public class Coach {
     public String getNomComplet() {
         return (prenom != null ? prenom : "") + " " + (nom != null ? nom : "");
     }
+
+    public String getIdFirebase() {
+        return id; // retourne l'ID Firebase du coach
+    }
+
 }
