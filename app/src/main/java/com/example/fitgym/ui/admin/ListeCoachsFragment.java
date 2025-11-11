@@ -3,14 +3,14 @@ package com.example.fitgym.ui.admin;
 import android.app.Activity;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
-import android.graphics.Bitmap; // ✅ IMPORT
-import android.graphics.BitmapFactory; // ✅ IMPORT
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Base64; // ✅ IMPORT
-import android.util.Log; // ✅ IMPORT
+import android.util.Base64;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -44,10 +44,8 @@ import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 
-// ❌ Imports Firebase Storage supprimés
-
-import java.io.ByteArrayOutputStream; // ✅ IMPORT
-import java.io.InputStream; // ✅ IMPORT
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -70,11 +68,9 @@ public class ListeCoachsFragment extends Fragment {
     private ImageView imagePreviewActive;
     private ImageButton btnFilter;
 
-    // 🔹 SQLite helper
     private DatabaseHelper dbHelper;
     private DAOCoach daoCoach;
 
-    // ✅ Variable pour stocker le texte de l'image
     private String imageBase64 = null;
 
     @Nullable
@@ -83,7 +79,6 @@ public class ListeCoachsFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         View vue = inflater.inflate(R.layout.activity_liste_coachs, container, false);
 
-        // ✅ Initialisation correcte de la DB
         dbHelper = new DatabaseHelper(getContext());
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         daoCoach = new DAOCoach(db);
@@ -103,13 +98,29 @@ public class ListeCoachsFragment extends Fragment {
         configurerEcouteurs();
         observerViewModel();
 
-        // 🔹 Charger les coaches depuis SQLite au démarrage
+        // Charger depuis SQLite en local
+        // Charger depuis SQLite en local
         List<Coach> localCoachs = daoCoach.listerCoachs();
+
+// ✅ Nettoyage des coachs sans ID (anti “fantômes”)
+        localCoachs.removeIf(c -> c.getId() == null || c.getId().trim().isEmpty());
+
+// ✅ Supprimer aussi de SQLite si jamais il y en a
+        for (Coach c : new ArrayList<>(localCoachs)) {
+            if (c.getId() == null || c.getId().trim().isEmpty()) {
+                daoCoach.supprimerCoachSansId(c.getNomComplet());
+            }
+        }
+
+// ✅ Mettre à jour les listes et rafraîchir l’affichage
         listeCompleteCoachs.clear();
         listeCompleteCoachs.addAll(localCoachs);
         listeAffichee.clear();
         listeAffichee.addAll(localCoachs);
         adaptateur.definirCoachs(listeAffichee);
+
+        Log.d("ListeCoachsFragment", "Coachs locaux chargés : " + localCoachs.size());
+
 
         return vue;
     }
@@ -118,11 +129,10 @@ public class ListeCoachsFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         if (dbHelper != null) {
-            dbHelper.close(); // Ferme la connexion DB
+            dbHelper.close();
         }
     }
 
-    // --- Filtrage / tri ---
     private void afficherDialogFiltre() {
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_filtre_coach, null);
         Spinner spinnerFiltre = dialogView.findViewById(R.id.spinnerFiltre);
@@ -183,28 +193,19 @@ public class ListeCoachsFragment extends Fragment {
         adaptateur.definirCoachs(listeAffichee);
     }
 
-    // --- Écouteurs ---
     private void configurerEcouteurs() {
         fabAjouterCoach.setOnClickListener(v -> afficherDialogAjouterCoach());
         champRecherche.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (adaptateur != null) adaptateur.getFilter().filter(s);
             }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-            }
+            @Override public void afterTextChanged(Editable s) {}
         });
     }
 
     private void observerViewModel() {
         viewModelCoach.getListeCoachs().observe(getViewLifecycleOwner(), coaches -> {
-            // on arrête tout et on garde la liste qu'on a chargée de SQLite.
             if (coaches == null || coaches.isEmpty()) {
                 return;
             }
@@ -213,6 +214,8 @@ public class ListeCoachsFragment extends Fragment {
             listeAffichee.clear();
             listeAffichee.addAll(coaches);
             adaptateur.definirCoachs(listeAffichee);
+
+            // Sync Firebase -> SQLite : vider et réinsérer
             daoCoach.viderCoachs();
             for (Coach c : coaches) {
                 daoCoach.ajouterCoach(c);
@@ -220,7 +223,6 @@ public class ListeCoachsFragment extends Fragment {
         });
     }
 
-    // --- Ajout Coach (Modifié pour Base64) ---
     private void afficherDialogAjouterCoach() {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         View vueDialog = getLayoutInflater().inflate(R.layout.dialog_ajout_coach, null);
@@ -238,7 +240,7 @@ public class ListeCoachsFragment extends Fragment {
         preview.setImageResource(R.drawable.ic_placeholder);
         imagePreviewActive = preview;
         currentImageUri = null;
-        imageBase64 = null; // Réinitialiser
+        imageBase64 = null;
 
         btnAnnuler.setOnClickListener(v -> dialog.dismiss());
 
@@ -259,22 +261,20 @@ public class ListeCoachsFragment extends Fragment {
             }
 
             Coach nouveauCoach = new Coach();
+            // On remplit prénom dans inputNomComplet si l'UI contient nom complet; ici on écrit dans prenom vide
             nouveauCoach.setNom(nom);
             nouveauCoach.setDescription(desc);
             nouveauCoach.setSpecialites(specs.isEmpty() ? new ArrayList<>() : Arrays.asList(specs.split(",")));
 
-            // ✅ Logique Base64
-            if (imageBase64 != null) {
-                nouveauCoach.setPhotoUrl(imageBase64); // Stocke le texte Base64
+            if (imageBase64 != null && imageBase64.trim().length() > 20) {
+                nouveauCoach.setPhotoUrl(imageBase64);
             } else {
                 nouveauCoach.setPhotoUrl("");
             }
 
-            // Réinitialiser les variables
             currentImageUri = null;
             imageBase64 = null;
 
-            // 🔹 Stockage Firebase (Realtime DB)
             new FirebaseHelper().ajouterCoach(nouveauCoach, success -> {
                 if (success) {
                     Toast.makeText(getContext(), "Coach ajouté !", Toast.LENGTH_SHORT).show();
@@ -282,7 +282,7 @@ public class ListeCoachsFragment extends Fragment {
                     adaptateur.definirCoachs(listeCompleteCoachs);
                     dialog.dismiss();
 
-                    // 🔹 Stockage SQLite
+                    // Stockage SQLite (coach doit maintenant avoir un id fourni par Firebase)
                     daoCoach.ajouterCoach(nouveauCoach);
                 } else {
                     Toast.makeText(getContext(), "Erreur lors de l'ajout", Toast.LENGTH_SHORT).show();
@@ -293,7 +293,6 @@ public class ListeCoachsFragment extends Fragment {
         dialog.show();
     }
 
-    // --- Modification Coach (Modifié pour Base64) ---
     private void afficherDialogModifierCoach(Coach coach) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         View vueDialog = getLayoutInflater().inflate(R.layout.dialog_modifier_coach, null);
@@ -310,29 +309,20 @@ public class ListeCoachsFragment extends Fragment {
 
         inputNom.setText(coach.getNomComplet());
         inputBio.setText(coach.getDescription());
-        if (coach.getSpecialites() != null)
-            inputSpecialites.setText(String.join(",", coach.getSpecialites()));
+        if (coach.getSpecialites() != null) inputSpecialites.setText(String.join(",", coach.getSpecialites()));
 
-        // ✅ Décode le Base64 pour l'aperçu
         String base64Image = coach.getPhotoUrl();
-        if (base64Image != null && !base64Image.isEmpty()) {
+        if (base64Image != null && base64Image.trim().length() > 20) {
             Bitmap bitmap = convertBase64ToBitmap(base64Image);
             if (bitmap != null) {
-                Glide.with(getContext())
-                        .load(bitmap)
-                        .placeholder(R.drawable.ic_placeholder)
-                        .error(R.drawable.ic_placeholder)
-                        .into(preview);
-            } else {
-                preview.setImageResource(R.drawable.ic_placeholder);
-            }
-        } else {
-            preview.setImageResource(R.drawable.ic_placeholder);
-        }
+                Glide.with(getContext()).load(bitmap).placeholder(R.drawable.ic_placeholder)
+                        .error(R.drawable.ic_placeholder).into(preview);
+            } else preview.setImageResource(R.drawable.ic_placeholder);
+        } else preview.setImageResource(R.drawable.ic_placeholder);
 
         imagePreviewActive = preview;
         currentImageUri = null;
-        imageBase64 = null; // Réinitialiser
+        imageBase64 = null;
 
         btnAnnuler.setOnClickListener(v -> dialog.dismiss());
 
@@ -357,23 +347,16 @@ public class ListeCoachsFragment extends Fragment {
             coach.setDescription(desc);
             coach.setSpecialites(specs.isEmpty() ? new ArrayList<>() : Arrays.asList(specs.split(",")));
 
-            // ✅ Logique Base64
-            // Si une nouvelle image a été sélectionnée, on la met à jour.
-            if (imageBase64 != null) {
+            if (imageBase64 != null && imageBase64.trim().length() > 20) {
                 coach.setPhotoUrl(imageBase64);
             }
 
-            // Réinitialiser les variables
             currentImageUri = null;
             imageBase64 = null;
 
-            // 🔹 Firebase (Realtime DB)
             new FirebaseHelper().modifierCoach(coach, success -> {
-                if (success)
-                    adaptateur.notifyItemChanged(listeCompleteCoachs.indexOf(coach));
+                if (success) adaptateur.notifyItemChanged(listeCompleteCoachs.indexOf(coach));
                 dialog.dismiss();
-
-                // 🔹 SQLite
                 daoCoach.modifierCoach(coach);
             });
         });
@@ -381,27 +364,14 @@ public class ListeCoachsFragment extends Fragment {
         dialog.show();
     }
 
-
-    // ✅ ===============================================
-    // ✅ NOUVELLES MÉTHODES POUR LA CONVERSION BASE64
-    // ✅ ===============================================
-
-    /**
-     * Convertit une Uri d'image en une chaîne Base64, en la redimensionnant.
-     */
     private String convertUriToBase64(Uri uri) {
         try {
             InputStream inputStream = getContext().getContentResolver().openInputStream(uri);
             Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-
-            // IMPORTANT : Réduire la taille de l'image
             Bitmap bitmapReduit = resizeBitmap(bitmap, 800);
-
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            // Compresser en JPEG avec 80% de qualité
             bitmapReduit.compress(Bitmap.CompressFormat.JPEG, 80, byteArrayOutputStream);
             byte[] byteArray = byteArrayOutputStream.toByteArray();
-
             return Base64.encodeToString(byteArray, Base64.DEFAULT);
         } catch (Exception e) {
             Log.e("Base64", "Erreur de conversion Uri en Base64", e);
@@ -410,29 +380,23 @@ public class ListeCoachsFragment extends Fragment {
         }
     }
 
-    /**
-     * Redimensionne un Bitmap pour ne pas dépasser maxSize (en gardant les proportions).
-     */
     private Bitmap resizeBitmap(Bitmap bitmap, int maxSize) {
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
         float bitmapRatio = (float) width / (float) height;
-
-        if (bitmapRatio > 1) { // Image paysage
+        if (bitmapRatio > 1) {
             width = maxSize;
             height = (int) (width / bitmapRatio);
-        } else { // Image portrait
+        } else {
             height = maxSize;
             width = (int) (height * bitmapRatio);
         }
         return Bitmap.createScaledBitmap(bitmap, width, height, true);
     }
 
-    /**
-     * Convertit une chaîne Base64 en Bitmap pour l'affichage.
-     */
     public Bitmap convertBase64ToBitmap(String base64Str) {
         try {
+            if (base64Str == null || base64Str.trim().length() < 20) return null;
             byte[] decodedBytes = Base64.decode(base64Str, Base64.DEFAULT);
             return BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length);
         } catch (Exception e) {
@@ -441,27 +405,20 @@ public class ListeCoachsFragment extends Fragment {
         }
     }
 
-
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == PICK_IMAGE && resultCode == Activity.RESULT_OK && data != null) {
             currentImageUri = data.getData();
-
-            // ✅ Convertir et stocker en Base64 immédiatement
             imageBase64 = convertUriToBase64(currentImageUri);
-
-            if (imagePreviewActive != null) {
-                imagePreviewActive.setImageURI(currentImageUri);
-            }
-
+            if (imagePreviewActive != null) imagePreviewActive.setImageURI(currentImageUri);
             if (imageBase64 == null) {
                 Toast.makeText(getContext(), "Erreur lors de la conversion de l'image", Toast.LENGTH_LONG).show();
             }
         }
     }
 
-    // --- Adapter (Modifié pour Base64) ---
+    // --- Adapter ---
     private class AdaptateurCoach extends RecyclerView.Adapter<AdaptateurCoach.ViewHolderCoach>
             implements android.widget.Filterable {
 
@@ -554,21 +511,16 @@ public class ListeCoachsFragment extends Fragment {
                 txtNote.setText(String.format(Locale.FRANCE, "%.1f (%d avis)", coach.getRating(), coach.getReviewCount()));
                 txtNbSeances.setText(coach.getSessionCount() + " séances");
 
-                // ✅ CHANGEMENT : Lire le texte Base64 et le convertir en Bitmap
                 String base64Image = coach.getPhotoUrl();
-
-                if (base64Image != null && !base64Image.isEmpty()) {
-                    // Appelle la méthode de conversion (qui est dans le Fragment)
+                if (base64Image != null && base64Image.trim().length() > 20) {
                     Bitmap bitmap = convertBase64ToBitmap(base64Image);
-
                     if (bitmap != null) {
                         Glide.with(itemView.getContext())
-                                .load(bitmap) // Charger le Bitmap
+                                .load(bitmap)
                                 .placeholder(R.drawable.ic_placeholder)
                                 .error(R.drawable.ic_placeholder)
                                 .into(imgProfil);
                     } else {
-                        // Le texte Base64 était corrompu
                         imgProfil.setImageResource(R.drawable.ic_placeholder);
                     }
                 } else {
@@ -587,7 +539,7 @@ public class ListeCoachsFragment extends Fragment {
                 }
 
                 btnModifier.setOnClickListener(v -> afficherDialogModifierCoach(coach));
-                // HADA HOWA L CODE S7I7
+
                 btnSupprimer.setOnClickListener(v -> {
                     new AlertDialog.Builder(getContext())
                             .setTitle("Supprimer Coach")
@@ -595,30 +547,35 @@ public class ListeCoachsFragment extends Fragment {
                             .setPositiveButton("Oui", (dialog, which) -> {
                                 String coachId = coach.getId();
 
+                                if (coachId == null || coachId.trim().isEmpty()) {
+                                    // 🔹 Supprimer uniquement localement
+                                    daoCoach.supprimerCoachSansId(coach.getNomComplet());
+                                    listeCompleteCoachs.remove(coach);
+                                    listeAffichee.remove(coach);
+                                    adaptateur.definirCoachs(listeAffichee);
+                                    dialog.dismiss();
+                                    Toast.makeText(getContext(), "Coach sans ID supprimé localement", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
+
                                 new FirebaseHelper().supprimerCoach(coachId, success -> {
                                     if (success) {
-                                        // 🔹 Supprimer dans les listes du Fragment
-                                        // 🔹 Supprimer dans les listes du Fragment
-                                        listeCompleteCoachs.removeIf(c -> c.getId().equals(coachId));
-                                        listeAffichee.removeIf(c -> c.getId().equals(coachId));
-
-// 🔹 Supprimer dans SQLite
+                                        listeCompleteCoachs.removeIf(c -> coachId.equals(c.getId()));
+                                        listeAffichee.removeIf(c -> coachId.equals(c.getId()));
                                         daoCoach.supprimerCoach(coachId);
-
-// 🔹 Mettre à jour l'adapter avec la liste filtrée à jour
                                         adaptateur.definirCoachs(listeAffichee);
-
                                         dialog.dismiss();
-                                        Toast.makeText(getContext(), "Supprimé", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(getContext(), "Coach supprimé", Toast.LENGTH_SHORT).show();
                                     } else {
-                                        Toast.makeText(getContext(), "Erreur lors de la suppression", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(getContext(), "Erreur de suppression Firebase", Toast.LENGTH_SHORT).show();
                                     }
                                 });
                             })
                             .setNegativeButton("Annuler", (dialog, which) -> dialog.dismiss())
                             .show();
                 });
+
             }
-            }
-}
+        }
+    }
 }

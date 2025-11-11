@@ -1,6 +1,7 @@
 package com.example.fitgym.data.db;
 
 import androidx.annotation.NonNull;
+import androidx.core.util.Consumer;
 
 import com.example.fitgym.data.model.Admin;
 import com.example.fitgym.data.model.Coach;
@@ -45,16 +46,16 @@ public class FirebaseHelper {
     }
 
     // --- AJOUTER COACH ---
-    public void ajouterCoach(Coach coach, UpdateCallback callback) {
-        String id = coachsRef.push().getKey();
-        if (id == null) {
-            callback.onComplete(false);
+    public void ajouterCoach(Coach coach, Consumer<Boolean> callback) {
+        String key = coachsRef.push().getKey();
+        if (key == null) {
+            callback.accept(false);
             return;
         }
-        coach.setId(id);
-        coachsRef.child(id).setValue(coach)
-                .addOnSuccessListener(aVoid -> callback.onComplete(true))
-                .addOnFailureListener(e -> callback.onComplete(false));
+        coach.setId(key); // 🔹 important
+        coachsRef.child(key).setValue(coach)
+                .addOnSuccessListener(aVoid -> callback.accept(true))
+                .addOnFailureListener(e -> callback.accept(false));
     }
 
     // --- MODIFIER COACH ---

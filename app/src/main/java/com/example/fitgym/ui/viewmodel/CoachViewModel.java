@@ -24,41 +24,34 @@ public class CoachViewModel extends AndroidViewModel {
         chargerCoachs();
     }
 
-    // LiveData à observer dans ton fragment
     public LiveData<List<Coach>> getListeCoachs() {
         return coachsLiveData;
     }
 
-    // Charger les coachs depuis Firebase
     private void chargerCoachs() {
         firebaseHelper.getAllCoaches(fireBaseCoachs -> {
             coachsLiveData.postValue(fireBaseCoachs != null ? fireBaseCoachs : new ArrayList<>());
         });
     }
 
-    // Ajouter un coach (UI mise à jour immédiatement)
     public void ajouterCoach(Coach coach) {
         List<Coach> current = coachsLiveData.getValue();
         if (current == null) current = new ArrayList<>();
-        current.add(coach);
-        coachsLiveData.setValue(current); // Update instantané UI
+        current.add(0, coach); // add en tête
+        coachsLiveData.setValue(current);
 
-        // Ajouter sur Firebase
         List<Coach> finalCurrent = current;
         firebaseHelper.ajouterCoach(coach, success -> {
             if (!success) {
-                // rollback si nécessaire
                 finalCurrent.remove(coach);
                 coachsLiveData.postValue(finalCurrent);
             }
         });
     }
 
-    // Supprimer un coach par ID
     public void supprimerCoach(String coachId) {
         List<Coach> current = coachsLiveData.getValue();
         if (current != null) {
-            // Retirer le coach correspondant à l'ID
             for (int i = 0; i < current.size(); i++) {
                 if (current.get(i).getId() != null && current.get(i).getId().equals(coachId)) {
                     current.remove(i);
@@ -68,20 +61,14 @@ public class CoachViewModel extends AndroidViewModel {
             coachsLiveData.setValue(current);
         }
 
-        // Supprimer sur Firebase
-        firebaseHelper.supprimerCoach(coachId, success -> {
-            if (!success) {
-            }
-        });
+        firebaseHelper.supprimerCoach(coachId, success -> {});
     }
-
 
     public void modifierCoach(Coach coach) {
         List<Coach> current = coachsLiveData.getValue();
         if (current != null) {
             for (int i = 0; i < current.size(); i++) {
-                if (current.get(i).getIdFirebase() != null &&
-                        current.get(i).getIdFirebase().equals(coach.getIdFirebase())) {
+                if (current.get(i).getId() != null && current.get(i).getId().equals(coach.getId())) {
                     current.set(i, coach);
                     break;
                 }

@@ -3,44 +3,60 @@ package com.example.fitgym.data.dao;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+
 import com.example.fitgym.data.model.Coach;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-// ❌ DO NOT EXTEND SQLiteOpenHelper
 public class DAOCoach {
 
     private static final String TABLE_COACH = "Coach";
-
-    // ✅ Store the database, don't create it
     private SQLiteDatabase db;
 
-    // ✅ Constructor now takes the database from DatabaseHelper
     public DAOCoach(SQLiteDatabase db) {
         this.db = db;
     }
 
-    // --- FONCTIONS D'AIDE pour convertir Liste <-> String ---
+    // --- Aide conversion list <-> string ---
     private String convertirListeEnString(List<String> liste) {
-        if (liste == null || liste.isEmpty()) {
-            return "";
-        }
+        if (liste == null || liste.isEmpty()) return "";
         return String.join(",", liste);
     }
 
     private List<String> convertirStringEnListe(String texte) {
-        if (texte == null || texte.isEmpty()) {
-            return new ArrayList<>();
-        }
+        if (texte == null || texte.isEmpty()) return new ArrayList<>();
         return new ArrayList<>(Arrays.asList(texte.split(",")));
     }
 
-
+    // --- Ajout ---
     public long ajouterCoach(Coach coach) {
-        // ❌ Don't call getWritableDatabase()
+        if (coach.getId() == null || coach.getId().trim().isEmpty()) return 0;
         ContentValues values = new ContentValues();
+        values.put("id", coach.getId());
+        values.put("nom", coach.getNomComplet());
+        values.put("specialites", coach.getSpecialites() != null ? String.join(",", coach.getSpecialites()) : "");
+        values.put("photo_url", coach.getPhotoUrl());
+        values.put("contact", coach.getContact());
+        values.put("description", coach.getDescription());
+        values.put("rating", coach.getRating());
+        values.put("review_count", coach.getReviewCount());
+        values.put("session_count", coach.getSessionCount());
+        db.insertWithOnConflict("Coach", null, values, SQLiteDatabase.CONFLICT_REPLACE);
+        return db.insert(TABLE_COACH, null, values);
+    }
 
+
+    // ✅ Suppression d’un coach sans ID (secours)
+    public void supprimerCoachSansId(String nomComplet) {
+        db.delete("Coach", "nom = ?", new String[]{nomComplet});
+    }
+
+
+    // --- Modification ---
+    public int modifierCoach(Coach coach) {
+        ContentValues values = new ContentValues();
         values.put("nom", coach.getNom());
         values.put("photo_url", coach.getPhotoUrl());
         values.put("contact", coach.getContact());
@@ -50,86 +66,83 @@ public class DAOCoach {
         values.put("session_count", coach.getSessionCount());
         values.put("specialites", convertirListeEnString(coach.getSpecialites()));
 
-        // ✅ Use the 'db' variable directly
-        long id = db.insert(TABLE_COACH, null, values);
-        // ❌ Don't call db.close() here! Let the helper manage it.
-        return id;
+        String id = coach.getId();
+        if (id == null) return 0;
+        return db.update(TABLE_COACH, values, "id = ?", new String[]{id});
     }
 
-    public int modifierCoach(Coach coach) {
-        ContentValues values = new ContentValues();
-        values.put("nom", coach.getNom());
-        values.put("photo_url", coach.getPhotoUrl());
-        values.put("description", coach.getDescription());
-        values.put("rating", coach.getRating());
-        values.put("review_count", coach.getReviewCount());
-        values.put("session_count", coach.getSessionCount());
-        values.put("specialites", convertirListeEnString(coach.getSpecialites()));
-
-        int rows = db.update(TABLE_COACH, values, "id = ?", new String[]{String.valueOf(coach.getId())});
-        return rows;
-    }
-
+    // --- Suppression ---
     public int supprimerCoach(String id) {
-        int rows = db.delete(TABLE_COACH, "id = ?", new String[]{id});
-        return rows;
+        if (id == null) return 0;
+        return db.delete(TABLE_COACH, "id = ?", new String[]{id});
     }
 
+    // --- Lister ---
     public List<Coach> listerCoachs() {
         List<Coach> liste = new ArrayList<>();
-        // ✅ Use the 'db' variable directly
         Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_COACH, null);
-
-        if (cursor.moveToFirst()) {
-            do {
-                Coach c = construireCoachDepuisCursor(cursor);
-                liste.add(c);
-            } while (cursor.moveToNext());
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                do {
+                    Coach c = construireCoachDepuisCursor(cursor);
+                    liste.add(c);
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
         }
-        cursor.close();
-        // ❌ Don't call db.close()
         return liste;
     }
 
+    // --- Obtenir par ID ---
     public Coach obtenirCoachParId(String id) {
+        if (id == null) return null;
         Coach coach = null;
-        Cursor cursor = db.query(TABLE_COACH,
-                null, "id = ?", new String[]{id},
-                null, null, null);
-
-        if (cursor.moveToFirst()) {
-            coach = construireCoachDepuisCursor(cursor);
+        Cursor cursor = db.query(TABLE_COACH, null, "id = ?", new String[]{id}, null, null, null);
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                coach = construireCoachDepuisCursor(cursor);
+            }
+            cursor.close();
         }
-        cursor.close();
         return coach;
     }
 
     private Coach construireCoachDepuisCursor(Cursor cursor) {
-        int idIndex = cursor.getColumnIndexOrThrow("id");
-        int nomIndex = cursor.getColumnIndexOrThrow("nom");
-        int photoUrlIndex = cursor.getColumnIndexOrThrow("photo_url");
-        int contactIndex = cursor.getColumnIndexOrThrow("contact");
-        int descriptionIndex = cursor.getColumnIndexOrThrow("description");
-        int ratingIndex = cursor.getColumnIndexOrThrow("rating");
-        int reviewCountIndex = cursor.getColumnIndexOrThrow("review_count");
-        int sessionCountIndex = cursor.getColumnIndexOrThrow("session_count");
-        int specialitesIndex = cursor.getColumnIndexOrThrow("specialites");
-
         Coach c = new Coach();
-        c.setId(cursor.getString(idIndex));
-        c.setNom(cursor.getString(nomIndex));
-        c.setPhotoUrl(cursor.getString(photoUrlIndex));
-        c.setContact(cursor.getString(contactIndex));
-        c.setDescription(cursor.getString(descriptionIndex));
-        c.setRating(cursor.getDouble(ratingIndex));
-        c.setReviewCount(cursor.getInt(reviewCountIndex));
-        c.setSessionCount(cursor.getInt(sessionCountIndex));
-        String specialitesEnString = cursor.getString(specialitesIndex);
-        c.setSpecialites(convertirStringEnListe(specialitesEnString));
+        int idx;
+
+        idx = cursor.getColumnIndex("id");
+        if (idx != -1) c.setId(cursor.getString(idx));
+
+        idx = cursor.getColumnIndex("nom");
+        if (idx != -1) c.setNom(cursor.getString(idx));
+
+
+        idx = cursor.getColumnIndex("photo_url");
+        if (idx != -1) c.setPhotoUrl(cursor.getString(idx));
+
+        idx = cursor.getColumnIndex("contact");
+        if (idx != -1) c.setContact(cursor.getString(idx));
+
+        idx = cursor.getColumnIndex("description");
+        if (idx != -1) c.setDescription(cursor.getString(idx));
+
+        idx = cursor.getColumnIndex("rating");
+        if (idx != -1) c.setRating(cursor.getDouble(idx));
+
+        idx = cursor.getColumnIndex("review_count");
+        if (idx != -1) c.setReviewCount(cursor.getInt(idx));
+
+        idx = cursor.getColumnIndex("session_count");
+        if (idx != -1) c.setSessionCount(cursor.getInt(idx));
+
+        idx = cursor.getColumnIndex("specialites");
+        if (idx != -1) c.setSpecialites(convertirStringEnListe(cursor.getString(idx)));
 
         return c;
     }
-    // Dans DAOCoach.java
+
+    // --- Vider table ---
     public void viderCoachs() {
         db.delete(TABLE_COACH, null, null);
     }
