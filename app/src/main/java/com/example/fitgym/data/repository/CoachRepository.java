@@ -1,6 +1,7 @@
 package com.example.fitgym.data.repository;
 
 import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
 
 import com.example.fitgym.data.dao.DAOCoach;
 import com.example.fitgym.data.model.Coach;
@@ -15,9 +16,7 @@ public class CoachRepository {
 
     private DAOCoach daoCoach;
 
-    public CoachRepository(Context context) {
-        daoCoach = new DAOCoach(context);
-    }
+
 
     /**
      * Récupère un coach par son ID (String) de manière efficace.

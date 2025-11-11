@@ -71,13 +71,11 @@ public class CoachViewModel extends AndroidViewModel {
         // Supprimer sur Firebase
         firebaseHelper.supprimerCoach(coachId, success -> {
             if (!success) {
-                // rollback si nécessaire (optionnel)
             }
         });
     }
 
 
-    // Modifier un coach
     public void modifierCoach(Coach coach) {
         List<Coach> current = coachsLiveData.getValue();
         if (current != null) {

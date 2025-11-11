@@ -13,48 +13,48 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * FirebaseHelper - gère les opérations Firebase pour Admin et Coach.
+ */
 public class FirebaseHelper {
 
-    private final DatabaseReference dbRef;
-    private final DatabaseReference coachesRef;
+    private final DatabaseReference adminRef;
+    private final DatabaseReference coachsRef;
 
     public FirebaseHelper() {
         FirebaseDatabase db = FirebaseDatabase.getInstance();
-        dbRef = db.getReference("admins/admin");
-        coachesRef = db.getReference("coaches");
+        adminRef = db.getReference("admins/admin");
+        coachsRef = db.getReference("coachs"); // cohérent avec le reste du projet
     }
 
-    /** Interface pour les callbacks de mise à jour (ajout, modification, suppression) */
+    // --- Interfaces de callback ---
     public interface UpdateCallback {
         void onComplete(boolean success);
     }
 
-    /** Interface pour récupérer l’admin */
     public interface AdminCallback {
         void onCallback(Admin admin);
     }
 
-    /** Interface pour récupérer la liste des coachs */
     public interface CoachesCallback {
         void onCallback(List<Coach> coachList);
     }
 
-    /** Interface pour récupérer la photo de l’admin */
     public interface PhotoCallback {
         void onCallback(String photoBase64);
     }
 
     // --- AJOUTER COACH ---
     public void ajouterCoach(Coach coach, UpdateCallback callback) {
-        String nouveauCoachId = coachesRef.push().getKey();
-        if (nouveauCoachId == null) {
+        String id = coachsRef.push().getKey();
+        if (id == null) {
             callback.onComplete(false);
             return;
         }
-
-        coach.setId(nouveauCoachId);
-        coachesRef.child(nouveauCoachId).setValue(coach)
-                .addOnCompleteListener(task -> callback.onComplete(task.isSuccessful()));
+        coach.setId(id);
+        coachsRef.child(id).setValue(coach)
+                .addOnSuccessListener(aVoid -> callback.onComplete(true))
+                .addOnFailureListener(e -> callback.onComplete(false));
     }
 
     // --- MODIFIER COACH ---
@@ -63,7 +63,7 @@ public class FirebaseHelper {
             callback.onComplete(false);
             return;
         }
-        coachesRef.child(coach.getId()).setValue(coach)
+        coachsRef.child(coach.getId()).setValue(coach)
                 .addOnCompleteListener(task -> callback.onComplete(task.isSuccessful()));
     }
 
@@ -73,23 +73,21 @@ public class FirebaseHelper {
             callback.onComplete(false);
             return;
         }
-        coachesRef.child(coachId).removeValue()
+        coachsRef.child(coachId).removeValue()
                 .addOnCompleteListener(task -> callback.onComplete(task.isSuccessful()));
     }
 
     // --- RECUPERER TOUS LES COACHS ---
     public void getAllCoaches(CoachesCallback callback) {
-        coachesRef.addValueEventListener(new ValueEventListener() {
+        coachsRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 List<Coach> coachList = new ArrayList<>();
-                if (snapshot.exists()) {
-                    for (DataSnapshot coachSnapshot : snapshot.getChildren()) {
-                        Coach coach = coachSnapshot.getValue(Coach.class);
-                        if (coach != null) {
-                            coach.setId(coachSnapshot.getKey()); // Assigner l’ID Firebase
-                            coachList.add(coach);
-                        }
+                for (DataSnapshot coachSnapshot : snapshot.getChildren()) {
+                    Coach coach = coachSnapshot.getValue(Coach.class);
+                    if (coach != null) {
+                        coach.setId(coachSnapshot.getKey());
+                        coachList.add(coach);
                     }
                 }
                 callback.onCallback(coachList);
@@ -104,7 +102,7 @@ public class FirebaseHelper {
 
     // --- ADMIN ---
     public void getAdmin(AdminCallback callback) {
-        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+        adminRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
@@ -112,9 +110,7 @@ public class FirebaseHelper {
                     String motDePasse = snapshot.child("motDePasse").getValue(String.class);
                     if (login != null && motDePasse != null) {
                         callback.onCallback(new Admin(login, motDePasse));
-                    } else {
-                        callback.onCallback(null);
-                    }
+                    } else callback.onCallback(null);
                 } else callback.onCallback(null);
             }
 
@@ -126,28 +122,25 @@ public class FirebaseHelper {
     }
 
     public void updateAdminEmail(String newEmail, UpdateCallback callback) {
-        dbRef.child("login").setValue(newEmail)
+        adminRef.child("login").setValue(newEmail)
                 .addOnCompleteListener(task -> callback.onComplete(task.isSuccessful()));
     }
 
     public void updateAdminPassword(String newPassword, UpdateCallback callback) {
-        dbRef.child("motDePasse").setValue(newPassword)
+        adminRef.child("motDePasse").setValue(newPassword)
                 .addOnCompleteListener(task -> callback.onComplete(task.isSuccessful()));
     }
 
     public void updateAdminPhoto(String photoBase64, UpdateCallback callback) {
-        dbRef.child("photo").setValue(photoBase64)
+        adminRef.child("photo").setValue(photoBase64)
                 .addOnCompleteListener(task -> callback.onComplete(task.isSuccessful()));
     }
 
     public void getAdminPhoto(PhotoCallback callback) {
-        dbRef.child("photo").addListenerForSingleValueEvent(new ValueEventListener() {
+        adminRef.child("photo").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if(snapshot.exists()) {
-                    String photoBase64 = snapshot.getValue(String.class);
-                    callback.onCallback(photoBase64);
-                } else callback.onCallback(null);
+                callback.onCallback(snapshot.exists() ? snapshot.getValue(String.class) : null);
             }
 
             @Override

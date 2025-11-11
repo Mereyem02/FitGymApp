@@ -10,8 +10,8 @@ import com.example.fitgym.data.model.Admin;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
-    private static final String DATABASE_NAME = "sport_app.db";
-    private static final int DATABASE_VERSION = 1;
+    public static final String DATABASE_NAME = "sport_app.db";
+    public static final int DATABASE_VERSION = 1;
 
     private static final String TABLE_ADMIN = "Admin";
 
@@ -20,17 +20,34 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     @Override
-    public void onCreate(SQLiteDatabase db) {
-        String createAdminTable = "CREATE TABLE IF NOT EXISTS " + TABLE_ADMIN + " (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                "login TEXT UNIQUE NOT NULL, " +
-                "mot_de_passe TEXT NOT NULL)";
-        db.execSQL(createAdminTable);
-    }
+        public void onCreate(SQLiteDatabase db) {
+            // 1. Create the Admin table
+            String createAdminTable = "CREATE TABLE IF NOT EXISTS " + TABLE_ADMIN + " (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    "login TEXT UNIQUE NOT NULL, " +
+                    "mot_de_passe TEXT NOT NULL)";
+            db.execSQL(createAdminTable);
+
+            // 2. ✅ ADD THIS: Create the Coach table
+            String createCoachTable = "CREATE TABLE IF NOT EXISTS Coach (" +
+                    "id TEXT PRIMARY KEY," +
+                    "nom TEXT NOT NULL," +
+                    "specialites TEXT," +
+                    "photo_url TEXT," +
+                    "contact TEXT," +
+                    "description TEXT," +
+                    "rating REAL," +
+                    "review_count INTEGER," +
+                    "session_count INTEGER" +
+                    ");";
+            db.execSQL(createCoachTable);
+        }
+
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_ADMIN);
+        db.execSQL("DROP TABLE IF EXISTS Coach"); // <-- ADD THIS LINE
         onCreate(db);
     }
 
@@ -102,17 +119,4 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.update(TABLE_ADMIN, cv, null, null);
         db.close();
     }
-    public static final String CREATE_TABLE_COACH = "CREATE TABLE IF NOT EXISTS Coach (" +
-            "id TEXT PRIMARY KEY," +
-            "nom TEXT NOT NULL," +
-            "prenom TEXT NOT NULL," +
-            "specialites TEXT," +      // Stockera la liste comme "Yoga,Muscu"
-            "photo_url TEXT," +
-            "contact TEXT," +
-            "description TEXT," +     // NOUVEAU
-            "rating REAL," +          // NOUVEAU (REAL pour les nombres à virgule)
-            "review_count INTEGER," + // NOUVEAU
-            "session_count INTEGER" + // NOUVEAU
-            ");";
-
-}
+    }

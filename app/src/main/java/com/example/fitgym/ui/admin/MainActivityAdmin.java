@@ -1,22 +1,24 @@
 package com.example.fitgym.ui.admin;
 
-import com.example.fitgym.R;
-import androidx.fragment.app.Fragment;
 import android.os.Bundle;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.ListFragment;
+import android.view.View;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+
+import com.example.fitgym.R;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class MainActivityAdmin extends AppCompatActivity {
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // lie ton XML ici
         setContentView(R.layout.activity_main_admin);
+
         BottomNavigationView bottomNav = findViewById(R.id.bottomNavigationView);
 
-        // Par défaut → Dashboard
+        // Fragment par défaut → Dashboard
         getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.fragment_container, new DashboardFragmentAdmin())
@@ -47,5 +49,15 @@ public class MainActivityAdmin extends AppCompatActivity {
 
             return true;
         });
+    }
+
+    // Méthode appelée depuis le XML (android:onClick)
+    public void onManageCoachsClick(View view) {
+        // Remplacer le fragment actuel par ListeCoachsFragment
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, new ListeCoachsFragment())
+                .addToBackStack(null) // permet de revenir en arrière
+                .commit();
     }
 }

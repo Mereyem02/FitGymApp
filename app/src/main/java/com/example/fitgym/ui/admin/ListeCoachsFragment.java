@@ -2,14 +2,21 @@ package com.example.fitgym.ui.admin;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap; // ✅ IMPORT
+import android.graphics.BitmapFactory; // ✅ IMPORT
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Base64; // ✅ IMPORT
+import android.util.Log; // ✅ IMPORT
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Spinner;
@@ -21,30 +28,29 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.fitgym.R;
+import com.example.fitgym.data.dao.DAOCoach;
+import com.example.fitgym.data.db.DatabaseHelper;
 import com.example.fitgym.data.db.FirebaseHelper;
 import com.example.fitgym.data.model.Coach;
 import com.example.fitgym.ui.viewmodel.CoachViewModel;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.textfield.TextInputEditText;
 
-import android.widget.Button;
-import android.widget.EditText;
+// ❌ Imports Firebase Storage supprimés
 
+import java.io.ByteArrayOutputStream; // ✅ IMPORT
+import java.io.InputStream; // ✅ IMPORT
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
@@ -55,14 +61,21 @@ public class ListeCoachsFragment extends Fragment {
     private CoachViewModel viewModelCoach;
     private RecyclerView recyclerViewCoachs;
     private AdaptateurCoach adaptateur;
-    private List<Coach> listeCompleteCoachs = new ArrayList<>(); // source "master"
-    private List<Coach> listeAffichee = new ArrayList<>();       // source affichée (filtrée/triée)
+    private List<Coach> listeCompleteCoachs = new ArrayList<>();
+    private List<Coach> listeAffichee = new ArrayList<>();
     private FloatingActionButton fabAjouterCoach;
     private EditText champRecherche;
     private static final int PICK_IMAGE = 101;
-    private Uri imageUri;
+    private Uri currentImageUri = null;
     private ImageView imagePreviewActive;
     private ImageButton btnFilter;
+
+    // 🔹 SQLite helper
+    private DatabaseHelper dbHelper;
+    private DAOCoach daoCoach;
+
+    // ✅ Variable pour stocker le texte de l'image
+    private String imageBase64 = null;
 
     @Nullable
     @Override
@@ -70,28 +83,19 @@ public class ListeCoachsFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         View vue = inflater.inflate(R.layout.activity_liste_coachs, container, false);
 
-        // --- ViewModel / Views ---
+        // ✅ Initialisation correcte de la DB
+        dbHelper = new DatabaseHelper(getContext());
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        daoCoach = new DAOCoach(db);
+
         viewModelCoach = new ViewModelProvider(this).get(CoachViewModel.class);
         recyclerViewCoachs = vue.findViewById(R.id.coachesRecyclerView);
         champRecherche = vue.findViewById(R.id.searchInput);
         fabAjouterCoach = vue.findViewById(R.id.fabAddCoach);
-
-        // important : initialiser btnFilter AVANT de l'utiliser
         btnFilter = vue.findViewById(R.id.btnFilter);
+
         btnFilter.setOnClickListener(v -> afficherDialogFiltre());
 
-        ImageButton btnBack = vue.findViewById(R.id.btnBack);
-        btnBack.setOnClickListener(v -> {
-            // on utilise la vue passée pour obtenir le NavController — plus fiable
-            try {
-                Navigation.findNavController(v).popBackStack();
-            } catch (Exception e) {
-                // fallback si nav non disponible
-                requireActivity().finish();
-            }
-        });
-
-        // RecyclerView + adapter
         adaptateur = new AdaptateurCoach();
         recyclerViewCoachs.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerViewCoachs.setAdapter(adaptateur);
@@ -99,27 +103,38 @@ public class ListeCoachsFragment extends Fragment {
         configurerEcouteurs();
         observerViewModel();
 
+        // 🔹 Charger les coaches depuis SQLite au démarrage
+        List<Coach> localCoachs = daoCoach.listerCoachs();
+        listeCompleteCoachs.clear();
+        listeCompleteCoachs.addAll(localCoachs);
+        listeAffichee.clear();
+        listeAffichee.addAll(localCoachs);
+        adaptateur.definirCoachs(listeAffichee);
+
         return vue;
     }
 
-    private void afficherDialogFiltre() {
-        LayoutInflater inflater = getLayoutInflater();
-        View dialogView = inflater.inflate(R.layout.dialog_filtre_coach, null);
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (dbHelper != null) {
+            dbHelper.close(); // Ferme la connexion DB
+        }
+    }
 
+    // --- Filtrage / tri ---
+    private void afficherDialogFiltre() {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_filtre_coach, null);
         Spinner spinnerFiltre = dialogView.findViewById(R.id.spinnerFiltre);
         Spinner spinnerSort = dialogView.findViewById(R.id.spinnerSort);
 
-        // Valeurs des filtres et tris
         String[] filtres = {"Tous", "Fitness", "Yoga", "Crossfit", "Cardio"};
         String[] tris = {"Nom (A-Z)", "Nom (Z-A)", "Plus populaire ↑", "Séances ↑"};
 
-        ArrayAdapter<String> adapterFiltre = new ArrayAdapter<>(requireContext(),
-                android.R.layout.simple_spinner_dropdown_item, filtres);
-        spinnerFiltre.setAdapter(adapterFiltre);
-
-        ArrayAdapter<String> adapterSort = new ArrayAdapter<>(requireContext(),
-                android.R.layout.simple_spinner_dropdown_item, tris);
-        spinnerSort.setAdapter(adapterSort);
+        spinnerFiltre.setAdapter(new ArrayAdapter<>(requireContext(),
+                android.R.layout.simple_spinner_dropdown_item, filtres));
+        spinnerSort.setAdapter(new ArrayAdapter<>(requireContext(),
+                android.R.layout.simple_spinner_dropdown_item, tris));
 
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         builder.setTitle("Filtrer et trier les coachs");
@@ -135,35 +150,19 @@ public class ListeCoachsFragment extends Fragment {
         builder.show();
     }
 
-    /**
-     * Applique filtre + tri sur la listeCompleteCoachs et met à jour le RecyclerView.
-     */
     private void appliquerFiltreEtTri(String filtre, String tri) {
-        if (listeCompleteCoachs == null || listeCompleteCoachs.isEmpty()) {
+        if (listeCompleteCoachs.isEmpty()) {
             Toast.makeText(getContext(), "Aucun coach disponible", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Filtrage
         List<Coach> resultat = new ArrayList<>();
         for (Coach c : listeCompleteCoachs) {
-            if (filtre.equals("Tous")) {
+            if (filtre.equals("Tous") || (c.getSpecialites() != null && c.getSpecialites().contains(filtre))) {
                 resultat.add(c);
-            } else {
-                // specialites est une List<String> — on vérifie la présence d'une spécialité qui contient le mot
-                List<String> specs = c.getSpecialites();
-                if (specs != null) {
-                    for (String s : specs) {
-                        if (s != null && s.trim().equalsIgnoreCase(filtre)) {
-                            resultat.add(c);
-                            break;
-                        }
-                    }
-                }
             }
         }
 
-        // Tri
         switch (tri) {
             case "Nom (A-Z)":
                 Collections.sort(resultat, (c1, c2) -> c1.getNomComplet().compareToIgnoreCase(c2.getNomComplet()));
@@ -172,49 +171,56 @@ public class ListeCoachsFragment extends Fragment {
                 Collections.sort(resultat, (c1, c2) -> c2.getNomComplet().compareToIgnoreCase(c1.getNomComplet()));
                 break;
             case "Plus populaire ↑":
-                Collections.sort(resultat, (c1, c2) -> Double.compare(c2.getRating(), c1.getRating())); // décroissant
+                Collections.sort(resultat, (c1, c2) -> Double.compare(c2.getRating(), c1.getRating()));
                 break;
             case "Séances ↑":
-                Collections.sort(resultat, (c1, c2) -> Integer.compare(c2.getSessionCount(), c1.getSessionCount())); // décroissant
-                break;
-            default:
-                // pas de tri particulier
+                Collections.sort(resultat, (c1, c2) -> Integer.compare(c2.getSessionCount(), c1.getSessionCount()));
                 break;
         }
 
-        // Appliquer sur la liste affichée et notifier l'adapter
         listeAffichee.clear();
         listeAffichee.addAll(resultat);
         adaptateur.definirCoachs(listeAffichee);
-        Toast.makeText(getContext(), "Filtre appliqué : " + filtre + " | Tri : " + tri, Toast.LENGTH_SHORT).show();
     }
 
+    // --- Écouteurs ---
     private void configurerEcouteurs() {
         fabAjouterCoach.setOnClickListener(v -> afficherDialogAjouterCoach());
-
         champRecherche.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (adaptateur != null) adaptateur.getFilter().filter(s);
             }
-            @Override public void afterTextChanged(Editable s) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
         });
     }
 
     private void observerViewModel() {
         viewModelCoach.getListeCoachs().observe(getViewLifecycleOwner(), coaches -> {
-            if (coaches == null) return;
-            // mettre à jour liste master et liste affichée
+            // on arrête tout et on garde la liste qu'on a chargée de SQLite.
+            if (coaches == null || coaches.isEmpty()) {
+                return;
+            }
             listeCompleteCoachs.clear();
             listeCompleteCoachs.addAll(coaches);
-
             listeAffichee.clear();
             listeAffichee.addAll(coaches);
-
             adaptateur.definirCoachs(listeAffichee);
+            daoCoach.viderCoachs();
+            for (Coach c : coaches) {
+                daoCoach.ajouterCoach(c);
+            }
         });
     }
 
+    // --- Ajout Coach (Modifié pour Base64) ---
     private void afficherDialogAjouterCoach() {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         View vueDialog = getLayoutInflater().inflate(R.layout.dialog_ajout_coach, null);
@@ -227,11 +233,15 @@ public class ListeCoachsFragment extends Fragment {
         MaterialButton btnChoisirImage = vueDialog.findViewById(R.id.inputUrlImage);
         Button btnAnnuler = vueDialog.findViewById(R.id.btnAnnuler);
         Button btnAjouter = vueDialog.findViewById(R.id.btnModifier);
-        imagePreviewActive = vueDialog.findViewById(R.id.imagePreview);
+        ImageView preview = vueDialog.findViewById(R.id.imagePreview);
+
+        preview.setImageResource(R.drawable.ic_placeholder);
+        imagePreviewActive = preview;
+        currentImageUri = null;
+        imageBase64 = null; // Réinitialiser
 
         btnAnnuler.setOnClickListener(v -> dialog.dismiss());
 
-        // Choix d'image
         btnChoisirImage.setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_PICK);
             intent.setType("image/*");
@@ -253,71 +263,210 @@ public class ListeCoachsFragment extends Fragment {
             nouveauCoach.setDescription(desc);
             nouveauCoach.setSpecialites(specs.isEmpty() ? new ArrayList<>() : Arrays.asList(specs.split(",")));
 
-            // Upload image si elle a été choisie
-            uploadImageToFirebase(imageUri, downloadUrl -> {
-                if (downloadUrl != null) nouveauCoach.setPhotoUrl(downloadUrl);
-                else nouveauCoach.setPhotoUrl("");
+            // ✅ Logique Base64
+            if (imageBase64 != null) {
+                nouveauCoach.setPhotoUrl(imageBase64); // Stocke le texte Base64
+            } else {
+                nouveauCoach.setPhotoUrl("");
+            }
 
-                FirebaseHelper firebaseHelper = new FirebaseHelper();
-                firebaseHelper.ajouterCoach(nouveauCoach, success -> {
-                    if (success) {
-                        Toast.makeText(getContext(), "Coach ajouté !", Toast.LENGTH_SHORT).show();
+            // Réinitialiser les variables
+            currentImageUri = null;
+            imageBase64 = null;
 
-                        // Ajout direct dans la liste et RecyclerView
-                        listeCompleteCoachs.add(0, nouveauCoach); // en tête
-                        listeAffichee.add(0, nouveauCoach);
-                        adaptateur.definirCoachs(listeAffichee);
+            // 🔹 Stockage Firebase (Realtime DB)
+            new FirebaseHelper().ajouterCoach(nouveauCoach, success -> {
+                if (success) {
+                    Toast.makeText(getContext(), "Coach ajouté !", Toast.LENGTH_SHORT).show();
+                    listeCompleteCoachs.add(0, nouveauCoach);
+                    adaptateur.definirCoachs(listeCompleteCoachs);
+                    dialog.dismiss();
 
-                        dialog.dismiss();
-                        imageUri = null; // reset URI
-                    } else {
-                        Toast.makeText(getContext(), "Erreur lors de l'ajout", Toast.LENGTH_SHORT).show();
-                    }
-                });
+                    // 🔹 Stockage SQLite
+                    daoCoach.ajouterCoach(nouveauCoach);
+                } else {
+                    Toast.makeText(getContext(), "Erreur lors de l'ajout", Toast.LENGTH_SHORT).show();
+                }
             });
         });
 
-        imagePreviewActive.setImageResource(R.drawable.ic_placeholder);
         dialog.show();
     }
 
-    // --- Upload image Firebase Storage ---
-    private void uploadImageToFirebase(Uri uri, OnImageUploadListener listener) {
-        if (uri == null) {
-            listener.onUploadComplete(null);
-            return;
+    // --- Modification Coach (Modifié pour Base64) ---
+    private void afficherDialogModifierCoach(Coach coach) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        View vueDialog = getLayoutInflater().inflate(R.layout.dialog_modifier_coach, null);
+        builder.setView(vueDialog);
+        AlertDialog dialog = builder.create();
+
+        TextInputEditText inputNom = vueDialog.findViewById(R.id.inputNomComplet);
+        TextInputEditText inputSpecialites = vueDialog.findViewById(R.id.inputSpecialites);
+        TextInputEditText inputBio = vueDialog.findViewById(R.id.inputBiographie);
+        MaterialButton btnChoisirImage = vueDialog.findViewById(R.id.inputUrlImage);
+        MaterialButton btnModifier = vueDialog.findViewById(R.id.btnModifier);
+        MaterialButton btnAnnuler = vueDialog.findViewById(R.id.btnAnnuler);
+        ImageView preview = vueDialog.findViewById(R.id.imagePreview1);
+
+        inputNom.setText(coach.getNomComplet());
+        inputBio.setText(coach.getDescription());
+        if (coach.getSpecialites() != null)
+            inputSpecialites.setText(String.join(",", coach.getSpecialites()));
+
+        // ✅ Décode le Base64 pour l'aperçu
+        String base64Image = coach.getPhotoUrl();
+        if (base64Image != null && !base64Image.isEmpty()) {
+            Bitmap bitmap = convertBase64ToBitmap(base64Image);
+            if (bitmap != null) {
+                Glide.with(getContext())
+                        .load(bitmap)
+                        .placeholder(R.drawable.ic_placeholder)
+                        .error(R.drawable.ic_placeholder)
+                        .into(preview);
+            } else {
+                preview.setImageResource(R.drawable.ic_placeholder);
+            }
+        } else {
+            preview.setImageResource(R.drawable.ic_placeholder);
         }
 
-        String nomFichier = "coachs/" + System.currentTimeMillis() + ".jpg";
-        StorageReference storageRef = FirebaseStorage.getInstance().getReference().child(nomFichier);
+        imagePreviewActive = preview;
+        currentImageUri = null;
+        imageBase64 = null; // Réinitialiser
 
-        storageRef.putFile(uri)
-                .addOnSuccessListener(taskSnapshot -> storageRef.getDownloadUrl()
-                        .addOnSuccessListener(downloadUri -> listener.onUploadComplete(downloadUri.toString()))
-                        .addOnFailureListener(e -> listener.onUploadComplete(null)))
-                .addOnFailureListener(e -> listener.onUploadComplete(null));
+        btnAnnuler.setOnClickListener(v -> dialog.dismiss());
+
+        btnChoisirImage.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_PICK);
+            intent.setType("image/*");
+            startActivityForResult(intent, PICK_IMAGE);
+            imagePreviewActive = preview;
+        });
+
+        btnModifier.setOnClickListener(v -> {
+            String nom = inputNom.getText().toString().trim();
+            String desc = inputBio.getText().toString().trim();
+            String specs = inputSpecialites.getText().toString().trim();
+
+            if (nom.isEmpty()) {
+                Toast.makeText(getContext(), "Nom obligatoire", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            coach.setNom(nom);
+            coach.setDescription(desc);
+            coach.setSpecialites(specs.isEmpty() ? new ArrayList<>() : Arrays.asList(specs.split(",")));
+
+            // ✅ Logique Base64
+            // Si une nouvelle image a été sélectionnée, on la met à jour.
+            if (imageBase64 != null) {
+                coach.setPhotoUrl(imageBase64);
+            }
+
+            // Réinitialiser les variables
+            currentImageUri = null;
+            imageBase64 = null;
+
+            // 🔹 Firebase (Realtime DB)
+            new FirebaseHelper().modifierCoach(coach, success -> {
+                if (success)
+                    adaptateur.notifyItemChanged(listeCompleteCoachs.indexOf(coach));
+                dialog.dismiss();
+
+                // 🔹 SQLite
+                daoCoach.modifierCoach(coach);
+            });
+        });
+
+        dialog.show();
     }
 
-    public interface OnImageUploadListener {
-        void onUploadComplete(String downloadUrl);
+
+    // ✅ ===============================================
+    // ✅ NOUVELLES MÉTHODES POUR LA CONVERSION BASE64
+    // ✅ ===============================================
+
+    /**
+     * Convertit une Uri d'image en une chaîne Base64, en la redimensionnant.
+     */
+    private String convertUriToBase64(Uri uri) {
+        try {
+            InputStream inputStream = getContext().getContentResolver().openInputStream(uri);
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+
+            // IMPORTANT : Réduire la taille de l'image
+            Bitmap bitmapReduit = resizeBitmap(bitmap, 800);
+
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            // Compresser en JPEG avec 80% de qualité
+            bitmapReduit.compress(Bitmap.CompressFormat.JPEG, 80, byteArrayOutputStream);
+            byte[] byteArray = byteArrayOutputStream.toByteArray();
+
+            return Base64.encodeToString(byteArray, Base64.DEFAULT);
+        } catch (Exception e) {
+            Log.e("Base64", "Erreur de conversion Uri en Base64", e);
+            Toast.makeText(getContext(), "Erreur conversion image", Toast.LENGTH_SHORT).show();
+            return null;
+        }
     }
+
+    /**
+     * Redimensionne un Bitmap pour ne pas dépasser maxSize (en gardant les proportions).
+     */
+    private Bitmap resizeBitmap(Bitmap bitmap, int maxSize) {
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        float bitmapRatio = (float) width / (float) height;
+
+        if (bitmapRatio > 1) { // Image paysage
+            width = maxSize;
+            height = (int) (width / bitmapRatio);
+        } else { // Image portrait
+            height = maxSize;
+            width = (int) (height * bitmapRatio);
+        }
+        return Bitmap.createScaledBitmap(bitmap, width, height, true);
+    }
+
+    /**
+     * Convertit une chaîne Base64 en Bitmap pour l'affichage.
+     */
+    public Bitmap convertBase64ToBitmap(String base64Str) {
+        try {
+            byte[] decodedBytes = Base64.decode(base64Str, Base64.DEFAULT);
+            return BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length);
+        } catch (Exception e) {
+            Log.e("Base64", "Erreur de décodage Base64", e);
+            return null;
+        }
+    }
+
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == PICK_IMAGE && resultCode == Activity.RESULT_OK && data != null) {
-            imageUri = data.getData();
-            if (imagePreviewActive != null) imagePreviewActive.setImageURI(imageUri);
-            if (adaptateur != null) adaptateur.setImageTempChoisie(imageUri); // aperçu direct dans la liste
+            currentImageUri = data.getData();
+
+            // ✅ Convertir et stocker en Base64 immédiatement
+            imageBase64 = convertUriToBase64(currentImageUri);
+
+            if (imagePreviewActive != null) {
+                imagePreviewActive.setImageURI(currentImageUri);
+            }
+
+            if (imageBase64 == null) {
+                Toast.makeText(getContext(), "Erreur lors de la conversion de l'image", Toast.LENGTH_LONG).show();
+            }
         }
     }
 
-    // ---------------- Adaptateur ----------------
-    private class AdaptateurCoach extends RecyclerView.Adapter<AdaptateurCoach.ViewHolderCoach> implements android.widget.Filterable {
+    // --- Adapter (Modifié pour Base64) ---
+    private class AdaptateurCoach extends RecyclerView.Adapter<AdaptateurCoach.ViewHolderCoach>
+            implements android.widget.Filterable {
 
         private List<Coach> listeAff = new ArrayList<>();
         private List<Coach> listeCompl = new ArrayList<>();
-        private Uri imageTempChoisie; // image temporaire sélectionnée
 
         public void definirCoachs(List<Coach> liste) {
             listeAff.clear();
@@ -326,13 +475,6 @@ public class ListeCoachsFragment extends Fragment {
             listeCompl.addAll(liste);
             notifyDataSetChanged();
         }
-
-        public void setImageTempChoisie(Uri uri) {
-            imageTempChoisie = uri;
-            notifyDataSetChanged();
-        }
-
-        public void clearImageTemp() { imageTempChoisie = null; }
 
         @NonNull
         @Override
@@ -347,10 +489,14 @@ public class ListeCoachsFragment extends Fragment {
         }
 
         @Override
-        public int getItemCount() { return listeAff.size(); }
+        public int getItemCount() {
+            return listeAff.size();
+        }
 
         @Override
-        public android.widget.Filter getFilter() { return filtreCoach; }
+        public android.widget.Filter getFilter() {
+            return filtreCoach;
+        }
 
         private final android.widget.Filter filtreCoach = new android.widget.Filter() {
             @Override
@@ -377,7 +523,6 @@ public class ListeCoachsFragment extends Fragment {
             protected void publishResults(CharSequence constraint, android.widget.Filter.FilterResults results) {
                 listeAff.clear();
                 if (results.values != null) {
-                    //noinspection unchecked
                     listeAff.addAll((List<Coach>) results.values);
                 }
                 notifyDataSetChanged();
@@ -409,14 +554,25 @@ public class ListeCoachsFragment extends Fragment {
                 txtNote.setText(String.format(Locale.FRANCE, "%.1f (%d avis)", coach.getRating(), coach.getReviewCount()));
                 txtNbSeances.setText(coach.getSessionCount() + " séances");
 
-                if (imageTempChoisie != null) {
-                    imgProfil.setImageURI(imageTempChoisie);
+                // ✅ CHANGEMENT : Lire le texte Base64 et le convertir en Bitmap
+                String base64Image = coach.getPhotoUrl();
+
+                if (base64Image != null && !base64Image.isEmpty()) {
+                    // Appelle la méthode de conversion (qui est dans le Fragment)
+                    Bitmap bitmap = convertBase64ToBitmap(base64Image);
+
+                    if (bitmap != null) {
+                        Glide.with(itemView.getContext())
+                                .load(bitmap) // Charger le Bitmap
+                                .placeholder(R.drawable.ic_placeholder)
+                                .error(R.drawable.ic_placeholder)
+                                .into(imgProfil);
+                    } else {
+                        // Le texte Base64 était corrompu
+                        imgProfil.setImageResource(R.drawable.ic_placeholder);
+                    }
                 } else {
-                    Glide.with(itemView.getContext())
-                            .load(coach.getPhotoUrl())
-                            .placeholder(R.drawable.ic_placeholder)
-                            .error(R.drawable.ic_placeholder)
-                            .into(imgProfil);
+                    imgProfil.setImageResource(R.drawable.ic_placeholder);
                 }
 
                 groupeDeChips.removeAllViews();
@@ -431,80 +587,38 @@ public class ListeCoachsFragment extends Fragment {
                 }
 
                 btnModifier.setOnClickListener(v -> afficherDialogModifierCoach(coach));
+                // HADA HOWA L CODE S7I7
                 btnSupprimer.setOnClickListener(v -> {
                     new AlertDialog.Builder(getContext())
                             .setTitle("Supprimer Coach")
                             .setMessage("Voulez-vous vraiment supprimer " + coach.getNomComplet() + " ?")
-                            .setPositiveButton("Oui", (dialog, which) -> viewModelCoach.supprimerCoach(coach.getId()))
-                            .setNegativeButton("Non", null)
+                            .setPositiveButton("Oui", (dialog, which) -> {
+                                String coachId = coach.getId();
+
+                                new FirebaseHelper().supprimerCoach(coachId, success -> {
+                                    if (success) {
+                                        // 🔹 Supprimer dans les listes du Fragment
+                                        // 🔹 Supprimer dans les listes du Fragment
+                                        listeCompleteCoachs.removeIf(c -> c.getId().equals(coachId));
+                                        listeAffichee.removeIf(c -> c.getId().equals(coachId));
+
+// 🔹 Supprimer dans SQLite
+                                        daoCoach.supprimerCoach(coachId);
+
+// 🔹 Mettre à jour l'adapter avec la liste filtrée à jour
+                                        adaptateur.definirCoachs(listeAffichee);
+
+                                        dialog.dismiss();
+                                        Toast.makeText(getContext(), "Supprimé", Toast.LENGTH_SHORT).show();
+                                    } else {
+                                        Toast.makeText(getContext(), "Erreur lors de la suppression", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            })
+                            .setNegativeButton("Annuler", (dialog, which) -> dialog.dismiss())
                             .show();
                 });
             }
-        }
-    }
-
-    private void afficherDialogModifierCoach(Coach coach) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        View vueDialog = getLayoutInflater().inflate(R.layout.dialog_modifier_coach, null);
-        builder.setView(vueDialog);
-        AlertDialog dialog = builder.create();
-
-        TextInputEditText inputNom = vueDialog.findViewById(R.id.inputNomComplet);
-        TextInputEditText inputSpecialites = vueDialog.findViewById(R.id.inputSpecialites);
-        TextInputEditText inputBio = vueDialog.findViewById(R.id.inputBiographie);
-        MaterialButton btnChoisirImage = vueDialog.findViewById(R.id.inputUrlImage);
-        MaterialButton btnModifier = vueDialog.findViewById(R.id.btnModifier);
-        MaterialButton btnAnnuler = vueDialog.findViewById(R.id.btnAnnuler);
-        imagePreviewActive = vueDialog.findViewById(R.id.imagePreview1);
-
-        inputNom.setText(coach.getNomComplet());
-        inputBio.setText(coach.getDescription());
-        if (coach.getSpecialites() != null) {
-            inputSpecialites.setText(String.join(",", coach.getSpecialites()));
-        }
-        Glide.with(getContext())
-                .load(coach.getPhotoUrl())
-                .placeholder(R.drawable.ic_placeholder)
-                .error(R.drawable.ic_placeholder)
-                .into(imagePreviewActive);
-
-        btnAnnuler.setOnClickListener(v -> dialog.dismiss());
-
-        btnChoisirImage.setOnClickListener(v -> {
-            Intent intent = new Intent(Intent.ACTION_PICK);
-            intent.setType("image/*");
-            startActivityForResult(intent, PICK_IMAGE);
-        });
-
-        btnModifier.setOnClickListener(v -> {
-            String nom = inputNom.getText().toString().trim();
-            String desc = inputBio.getText().toString().trim();
-            String specs = inputSpecialites.getText().toString().trim();
-
-            if (nom.isEmpty()) {
-                Toast.makeText(getContext(), "Nom obligatoire", Toast.LENGTH_SHORT).show();
-                return;
             }
-
-            coach.setNom(nom);
-            coach.setDescription(desc);
-            coach.setSpecialites(specs.isEmpty() ? new ArrayList<>() : Arrays.asList(specs.split(",")));
-
-            if (imageUri != null) {
-                uploadImageToFirebase(imageUri, downloadUrl -> {
-                    if (downloadUrl != null) coach.setPhotoUrl(downloadUrl);
-                    int index = listeCompleteCoachs.indexOf(coach);
-                    if (index != -1) adaptateur.notifyItemChanged(index);
-                    dialog.dismiss();
-                    imageUri = null;
-                });
-            } else {
-                int index = listeCompleteCoachs.indexOf(coach);
-                if (index != -1) adaptateur.notifyItemChanged(index);
-                dialog.dismiss();
-            }
-        });
-
-        dialog.show();
-    }
+}
 }
