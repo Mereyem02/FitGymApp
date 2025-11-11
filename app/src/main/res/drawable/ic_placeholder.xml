@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+
+    <!-- Placeholder pour les photos de coach -->
+    <path
+        android:fillColor="#E5E7EB"
+        android:pathData="M0,0h100v100h-100z"/>
+
+    <path
+        android:fillColor="#9CA3AF"
+        android:pathData="M50,30c8,0 15,7 15,15s-7,15 -15,15 -15,-7 -15,-15 7,-15 15,-15z"/>
+
+    <path
+        android:fillColor="#9CA3AF"
+        android:pathData="M25,80c0,-13.8 11.2,-25 25,-25s25,11.2 25,25v5h-50v-5z"/>
+</vector>

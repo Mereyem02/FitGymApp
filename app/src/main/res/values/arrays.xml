@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="languages">
+        <item>Français</item>
+        <item>English</item>
+    </string-array>
+<!--  Options de tri pour les coaches  -->
+<string-array name="sort_coaches_options">
+    <item>Trier par nom (A-Z)</item>
+    <item>Trier par nom (Z-A)</item>
+    <item>Note la plus élevée</item>
+    <item>Note la plus basse</item>
+    <item>Plus de séances</item>
+    <item>Récemment ajouté</item>
+    <item>Ancienneté</item>
+</string-array>
+</resources>

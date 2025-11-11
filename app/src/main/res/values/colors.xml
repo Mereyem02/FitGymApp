@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="primary">#3F51B5</color> <!-- Bleu par exemple -->
+    <color name="purple_active">#9C27B0</color>
+    <color name="gray_inactive">#808080</color>
+    <color name="purple_500">#9333EA</color>
+    <color name="app_background">#F5F6FA</color>
+    <color name="background_light">#F9FAFB</color>
+    <color name="text_gray">#6B7280</color>
+    <color name="chip_background_color">#EEEEEE</color>
+    <color name="chip_text_color">#555555</color>
+    <color name="chip_background">#F3F4F6</color>
+        <color name="colorPrimary">#6200EE</color>
+        <color name="colorPrimaryDark">#3700B3</color>
+        <color name="colorAccent">#03DAC5</color>
+
+        <!-- Couleurs principales (Purple) -->
+        <color name="purple_200">#E9D5FF</color>
+        <color name="purple_300">#D8B4FE</color>
+        <color name="purple_400">#A855F7</color>
+        <color name="purple_600">#6D28D9</color>
+        <color name="purple_700">#5B21B6</color>
+        <color name="purple_800">#4C1D95</color>
+        <color name="purple_900">#3B0764</color>
+
+        <!-- Couleurs grises -->
+        <color name="gray_50">#F9FAFB</color>
+        <color name="gray_100">#F3F4F6</color>
+        <color name="gray_200">#E5E7EB</color>
+        <color name="gray_300">#D1D5DB</color>
+        <color name="gray_400">#9CA3AF</color>
+        <color name="gray_500">#6B7280</color>
+        <color name="gray_600">#4B5563</color>
+        <color name="gray_700">#374151</color>
+        <color name="gray_800">#1F2937</color>
+        <color name="gray_900">#111827</color>
+
+        <!-- Couleurs rouges -->
+        <color name="red_50">#FEF2F2</color>
+        <color name="red_100">#FEE2E2</color>
+        <color name="red_200">#FECACA</color>
+        <color name="red_300">#FCA5A5</color>
+        <color name="red_400">#F87171</color>
+        <color name="red_500">#EF4444</color>
+        <color name="red_600">#DC2626</color>
+        <color name="red_700">#B91C1C</color>
+        <color name="red_800">#991B1B</color>
+        <color name="red_900">#7F1D1D</color>
+
+        <!-- Couleurs jaunes (pour les étoiles) -->
+        <color name="yellow_400">#FACC15</color>
+        <color name="yellow_500">#EAB308</color>
+
+        <!-- Couleurs de fond -->
+        <color name="background">#F4F5F7</color>
+        <color name="surface">#FFFFFF</color>
+
+        <!-- Couleurs pour les chips -->
+        <color name="chip_stroke">#E5E7EB</color>
+
+        <!-- Couleurs transparentes -->
+        <color name="white_20">#33FFFFFF</color>
+        <color name="white_40">#66FFFFFF</color>
+        <color name="black_10">#1A000000</color>
+        <color name="black_20">#33000000</color>
+
+
+</resources>

@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="16dp"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="12dp"
+    android:backgroundTint="@android:color/white">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Scrollable content -->
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:spacing="16dp">
+
+                <!-- Titre -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="Modifier le Coach"
+                    android:textColor="@color/purple_500"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:paddingBottom="8dp"/>
+
+                <!-- Sous-titre -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="Modifier les informations ci-dessous pour le coach  :"
+                    android:textColor="@color/nav_item_color"
+                    android:textSize="14sp"
+                    android:paddingBottom="16dp"/>
+
+                <!-- Nom complet -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Nom complet *"
+                    style="@style/RoundedTextInputLayout"
+                    >
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/inputNomComplet"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPersonName"/>
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Spécialités -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Spécialités (ex: Yoga, Pilates)"
+                    style="@style/RoundedTextInputLayout"
+                    >
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/inputSpecialites"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="text"/>
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Biographie -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Biographie *"
+                    style="@style/RoundedTextInputLayout"
+                    >
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/inputBiographie"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textMultiLine"
+                        android:lines="4"/>
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- URL de l'image -->
+
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    style="@style/RoundedTextInputLayout"
+                    >
+
+                    <Button
+                        android:id="@+id/inputUrlImage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:focusable="false"
+                        android:clickable="true"
+                        android:inputType="none"
+                        style="@style/Theme.Design"
+                        android:textColor="@color/purple_active"
+                        android:hint="Cliquez pour choisir une image"/>
+                </com.google.android.material.textfield.TextInputLayout>
+                <ImageView
+                    android:id="@+id/imagePreview1"
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_gravity="center"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_placeholder"
+                    android:contentDescription="Aperçu de l'image"
+                    android:background="@drawable/bg_photo_imageview" />
+
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- Boutons alignés à droite -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:gravity="end"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAnnuler"
+                android:layout_width="129dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="25dp"
+                android:layout_marginRight="90dp"
+                android:text="Annuler"
+                android:textColor="@color/nav_item_color"
+                app:backgroundTint="@color/chip_background" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnModifier"
+                android:layout_width="129dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="Modifier"
+                android:textColor="@android:color/white"
+                app:backgroundTint="@color/purple_500" />
+        </LinearLayout>
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>
