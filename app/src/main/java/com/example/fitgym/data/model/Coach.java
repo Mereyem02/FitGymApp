@@ -5,7 +5,6 @@ import java.util.List;
 public class Coach {
     private String id;
     private String nom;
-    private String prenom;
     private String photoUrl;
     private String contact;
     private String description;
@@ -16,11 +15,10 @@ public class Coach {
 
     public Coach() {}
 
-    public Coach(String nom, String prenom, String photoUrl, String contact,
+    public Coach(String nom,  String photoUrl, String contact,
                  String description, double rating, int reviewCount,
                  int sessionCount, List<String> specialites) {
         this.nom = nom;
-        this.prenom = prenom;
         this.photoUrl = photoUrl;
         this.contact = contact;
         this.description = description;
@@ -59,12 +57,10 @@ public class Coach {
     public void setSpecialites(List<String> specialites) { this.specialites = specialites; }
 
     public String getNomComplet() {
-        String p = prenom != null ? prenom.trim() : "";
         String n = nom != null ? nom.trim() : "";
-        if (p.isEmpty() && n.isEmpty()) return "";
-        if (p.isEmpty()) return n;
-        if (n.isEmpty()) return p;
-        return p + " " + n;
+        if ( n.isEmpty()) return "";
+        if (n.isEmpty()) return "";
+        return  n;
     }
 
     public String getIdFirebase() {

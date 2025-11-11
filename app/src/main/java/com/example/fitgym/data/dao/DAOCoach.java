@@ -117,7 +117,6 @@ public class DAOCoach {
         idx = cursor.getColumnIndex("nom");
         if (idx != -1) c.setNom(cursor.getString(idx));
 
-
         idx = cursor.getColumnIndex("photo_url");
         if (idx != -1) c.setPhotoUrl(cursor.getString(idx));
 

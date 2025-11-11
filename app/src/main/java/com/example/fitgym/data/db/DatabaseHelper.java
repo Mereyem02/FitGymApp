@@ -32,7 +32,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String createCoachTable = "CREATE TABLE IF NOT EXISTS Coach (" +
                 "id TEXT PRIMARY KEY," +
                 "nom TEXT NOT NULL," +
-                "prenom TEXT," +
                 "specialites TEXT," +
                 "photo_url TEXT," +
                 "contact TEXT," +
