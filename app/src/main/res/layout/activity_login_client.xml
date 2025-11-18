@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="24dp"
+    android:background="@color/white">
+
+    <!-- Logo -->
+    <ImageView
+        android:id="@+id/logoImage"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:contentDescription="Logo de l'application"
+        android:src="@drawable/iconlogin" />
+
+    <!-- Login -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Login"
+        android:textSize="16sp"
+        android:textColor="#2196F3"
+        android:layout_marginBottom="8dp"
+        android:textStyle="bold"
+        android:fontFamily="serif" />
+
+    <EditText
+        android:id="@+id/etLogin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Votre Login"
+        android:inputType="textEmailAddress"
+        android:padding="16dp"
+        android:background="@drawable/edittext_bordered"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Password -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Mot de Passe"
+        android:textSize="16sp"
+        android:textColor="#2196F3"
+        android:layout_marginBottom="8dp"
+        android:textStyle="bold"
+        android:fontFamily="serif" />
+
+    <EditText
+        android:id="@+id/etPassword"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="••••••"
+        android:inputType="textPassword"
+        android:padding="16dp"
+        android:background="@drawable/edittext_bordered"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Forgot Password -->
+    <TextView
+        android:id="@+id/tvForgotPassword"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginBottom="24dp"
+        android:text="Mot de passe oublié ?"
+        android:textColor="#2196F3"
+        android:textStyle="bold"
+        android:clickable="true"
+        android:focusable="true"
+        android:fontFamily="serif" />
+
+    <!-- Login Button -->
+    <Button
+        android:id="@+id/btnSeConnecter1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Se connecter"
+        android:backgroundTint="#1976D2"
+        android:textColor="@android:color/white"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Google Sign-In -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"
+        android:text="OU"
+        android:textColor="#2196F3"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <!-- Google Sign-In Button -->
+    <com.google.android.gms.common.SignInButton
+        android:id="@+id/btnGoogleSignIn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp" />
+
+
+
+    <!-- Go to Register -->
+    <TextView
+        android:id="@+id/tvGoToRegister1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pas de compte ? S'inscrire"
+        android:textColor="#2196F3"
+        android:textStyle="bold"
+        android:clickable="true"
+        android:focusable="true"
+        android:fontFamily="serif" />
+
+</LinearLayout>

@@ -11,7 +11,7 @@ import com.example.fitgym.data.model.Admin;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     public static final String DATABASE_NAME = "sport_app.db";
-    public static final int DATABASE_VERSION = 1;
+    public static final int DATABASE_VERSION = 2;
 
     private static final String TABLE_ADMIN = "Admin";
 
@@ -41,12 +41,23 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "session_count INTEGER" +
                 ");";
         db.execSQL(createCoachTable);
+        String createClientTable = "CREATE TABLE IF NOT EXISTS Client (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "nom TEXT NOT NULL," +
+                "email TEXT NOT NULL UNIQUE," +
+                "motDePasse TEXT NOT NULL," +  // <--- ici
+                "telephone TEXT" +
+                ");";
+        db.execSQL(createClientTable);
+
+
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_ADMIN);
         db.execSQL("DROP TABLE IF EXISTS Coach");
+        db.execSQL("DROP TABLE IF EXISTS Client");
         onCreate(db);
     }
 

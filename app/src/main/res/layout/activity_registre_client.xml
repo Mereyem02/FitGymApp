@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Logo -->
+        <ImageView
+            android:id="@+id/logoImage"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:contentDescription="Logo"
+            android:src="@drawable/iconlogin" />
+
+        <!-- Titre -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingBottom="16dp"
+            android:text="Créer un compte"
+            android:textColor="#2196F3"
+            android:textSize="24sp"
+            android:textStyle="bold|italic" />
+
+        <!-- Nom -->
+        <!-- Nom complet -->
+        <EditText
+            android:id="@+id/inputNom"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/edittext_bordered"
+            android:drawableStart="@drawable/ic_person"
+            android:drawablePadding="12dp"
+            android:fontFamily="serif"
+            android:hint="Nom complet"
+            android:padding="16dp"
+            android:textSize="16sp" />
+
+        <!-- Email -->
+        <EditText
+            android:id="@+id/inputEmail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/edittext_bordered"
+            android:drawableStart="@drawable/ic_email"
+            android:drawablePadding="12dp"
+            android:fontFamily="serif"
+            android:hint="Email"
+            android:padding="16dp"
+            android:textSize="16sp" />
+
+        <!-- Téléphone -->
+        <EditText
+            android:id="@+id/inputTelephone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/edittext_bordered"
+            android:drawableStart="@drawable/ic_phone"
+            android:drawablePadding="12dp"
+            android:fontFamily="serif"
+            android:hint="Téléphone"
+            android:padding="16dp"
+            android:textSize="16sp" />
+
+        <!-- Mot de passe -->
+        <EditText
+            android:id="@+id/inputPassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/edittext_bordered"
+            android:drawableStart="@drawable/ic_lock"
+            android:drawablePadding="12dp"
+            android:fontFamily="serif"
+            android:hint="Mot de passe"
+            android:inputType="textPassword"
+            android:padding="16dp"
+            android:textSize="16sp" />
+
+
+        <!-- Bouton Créer compte -->
+        <Button
+            android:id="@+id/btnRegister"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:backgroundTint="#1976D2"
+            android:text="Créer mon compte"
+            android:textColor="@android:color/white" />
+
+        <!-- OU Google Sign-In -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="8dp"
+            android:text="OU"
+            android:textColor="#2196F3"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <!-- Google Sign-In Button -->
+        <com.google.android.gms.common.SignInButton
+            android:id="@+id/btnGoogleSignIn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Déjà un compte ? -->
+        <TextView
+            android:id="@+id/tvGoToLogin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:fontFamily="serif"
+            android:text="Déjà un compte ? Se connecter"
+            android:textColor="#2196F3"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+</ScrollView>

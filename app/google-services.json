@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "456354809805",
+    "firebase_url": "https://fitgym-d266e-default-rtdb.firebaseio.com",
     "project_id": "fitgym-d266e",
     "storage_bucket": "fitgym-d266e.firebasestorage.app"
   },
@@ -12,7 +13,12 @@
           "package_name": "com.example.fitgymapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "456354809805-8sdq5apm07vfjnf0mb64pbsqg2bfd4dn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyC8gdoWYsNxc6BSQmV-93tgLov5TsO_IwA"
@@ -20,7 +26,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "456354809805-8sdq5apm07vfjnf0mb64pbsqg2bfd4dn.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

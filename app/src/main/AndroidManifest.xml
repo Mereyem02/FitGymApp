@@ -20,6 +20,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".ui.client.auth.LoginActivity">
+        </activity>
+        <activity android:name="com.example.fitgym.ui.client.auth.RegisterActivity" />
         <!-- Déclaration de LoginAdminActivity -->
         <activity android:name="com.example.fitgym.ui.admin.LoginAdminActivity" />
         <activity android:name="com.example.fitgym.ui.admin.MainActivityAdmin" />

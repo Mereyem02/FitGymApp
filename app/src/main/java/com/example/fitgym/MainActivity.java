@@ -23,6 +23,10 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MainActivity.this, com.example.fitgym.ui.admin.LoginAdminActivity.class);
             startActivity(intent);
         });
+        btnClient.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, com.example.fitgym.ui.client.auth.LoginActivity.class);
+            startActivity(intent);
+        });
 
 
     }
