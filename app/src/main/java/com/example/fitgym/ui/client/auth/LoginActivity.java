@@ -66,6 +66,10 @@ public class LoginActivity extends AppCompatActivity {
 
         // Aller vers RegisterActivity
         tvGoToRegister.setOnClickListener(v -> startActivity(new Intent(this, RegisterActivity.class)));
+        tvForgotPassword.setOnClickListener(v -> {
+            Intent intent = new Intent(this, RecoverPasswordActivity.class);
+            startActivity(intent);
+        });
 
         // Config Google Sign-In
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)

@@ -7,7 +7,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -34,7 +33,6 @@ public class RegisterActivity extends AppCompatActivity {
     private EditText inputNom, inputEmail, inputTelephone, inputPassword;
     private Button btnRegister;
     private TextView tvGoToLogin;
-    private ProgressBar progressBar;
     private SignInButton btnGoogleSignIn;
 
     private ClientViewModel clientViewModel;
@@ -98,7 +96,6 @@ public class RegisterActivity extends AppCompatActivity {
                     }
 
                     // Créer l’utilisateur
-                    progressBar.setVisibility(View.VISIBLE);
                     mAuth.createUserWithEmailAndPassword(email, password)
                             .addOnCompleteListener(createTask -> {
                                 if (!createTask.isSuccessful()) {
@@ -152,11 +149,9 @@ public class RegisterActivity extends AppCompatActivity {
 
     private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
         AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
-        progressBar.setVisibility(View.VISIBLE);
 
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
-                    progressBar.setVisibility(View.GONE);
                     if (!task.isSuccessful()) {
                         Toast.makeText(this, "Échec authentification Firebase", Toast.LENGTH_SHORT).show();
                         return;
