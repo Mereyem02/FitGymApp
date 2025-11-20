@@ -100,6 +100,7 @@
                     android:layout_height="wrap_content"
                     style="@style/RoundedTextInputLayout"
                     >
+
                     <Button
                         android:id="@+id/inputUrlImage"
                         android:layout_width="match_parent"
@@ -107,13 +108,13 @@
                         android:focusable="false"
                         android:clickable="true"
                         android:inputType="none"
-                        style="@style/Theme.Design"
-                        android:textColor="@color/purple_active"
+                        android:textColorHint="@color/white"
+                        app:backgroundTint="@color/purple_500"
                         android:hint="Cliquez pour choisir une image"/>
-                </com.google.android.material.textfield.TextInputLayout>
 
+                </com.google.android.material.textfield.TextInputLayout>
                 <ImageView
-                    android:id="@+id/imagePreview"
+                    android:id="@+id/imagePreview1"
                     android:layout_width="150dp"
                     android:layout_height="150dp"
                     android:layout_marginTop="16dp"
