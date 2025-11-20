@@ -4,4 +4,6 @@
     <string name="overview_text">Vue ensemble de la plateforme</string>
     <string name="quick_actions">Actions rapides</string>
     <string name="recent_bookings">Réservations récentes</string>
+    <string name="choisir_coach_prompt">Choisir un coach</string>'
+
 </resources>

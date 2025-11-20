@@ -33,7 +33,7 @@ public class MainActivityAdmin extends AppCompatActivity {
             } else if (id == R.id.nav_profile) {
                 selectedFragment = new ProfileFragmentAdmin();
             } else if (id == R.id.nav_sessions) {
-                // selectedFragment = new SessionsFragment();
+                 selectedFragment = new ListeSeancesFragment();
             } else if (id == R.id.nav_coaches) {
                 selectedFragment = new ListeCoachsFragment();
             } else if (id == R.id.nav_reservations) {
@@ -58,6 +58,13 @@ public class MainActivityAdmin extends AppCompatActivity {
                 .beginTransaction()
                 .replace(R.id.fragment_container, new ListeCoachsFragment())
                 .addToBackStack(null) // permet de revenir en arrière
+                .commit();
+    }
+    public void onManageSessionsClick(View view) {
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, new ListeSeancesFragment())
+                .addToBackStack(null)
                 .commit();
     }
 }

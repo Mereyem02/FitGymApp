@@ -48,6 +48,7 @@
         android:textColor="#2196F3"
         android:layout_marginBottom="8dp"
         android:textStyle="bold"
+
          />
 
     <EditText
@@ -59,7 +60,9 @@
         android:padding="16dp"
         android:background="@drawable/edittext_bordered"
         android:textSize="16sp"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginBottom="16dp"
+        android:drawableEnd="@drawable/ic_eye"
+    />
 
     <!-- Forgot Password -->
     <TextView

@@ -4,8 +4,10 @@ import androidx.annotation.NonNull;
 import androidx.core.util.Consumer;
 
 import com.example.fitgym.data.model.Admin;
+import com.example.fitgym.data.model.Categorie;
 import com.example.fitgym.data.model.Client;
 import com.example.fitgym.data.model.Coach;
+import com.example.fitgym.data.model.Seance;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -20,13 +22,46 @@ public class FirebaseHelper {
     private final DatabaseReference adminRef;
     private final DatabaseReference coachsRef;
     private final DatabaseReference clientsRef;
+    private final DatabaseReference categoriesRef;
+    private final DatabaseReference seancesRef;
+
 
     public FirebaseHelper() {
         FirebaseDatabase db = FirebaseDatabase.getInstance();
         adminRef = db.getReference("admins/admin");
         coachsRef = db.getReference("coachs");
         clientsRef = db.getReference("clients");
+        categoriesRef = db.getReference("categories");
+        seancesRef = db.getReference("seances");
     }
+    public interface ClientCallback { void onCallback(Client client); }
+
+    public void getClientById(String uid, ClientCallback callback) {
+        if (uid == null || uid.isEmpty()) {
+            callback.onCallback(null);
+            return;
+        }
+
+        clientsRef.child(uid).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    Client client = snapshot.getValue(Client.class);
+                    if (client != null) client.setId(snapshot.getKey());
+                    callback.onCallback(client);
+                } else {
+                    callback.onCallback(null);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                callback.onCallback(null);
+            }
+        });
+    }
+
+
 
     // === Callbacks ===
     public interface UpdateCallback { void onComplete(boolean success); }
@@ -34,6 +69,13 @@ public class FirebaseHelper {
     public interface CoachesCallback { void onCallback(List<Coach> coachList); }
     public interface ClientsCallback { void onCallback(List<Client> clientList); }
     public interface PhotoCallback { void onCallback(String photoBase64); }
+    public interface CategoriesCallback {
+        void onCallback(List<Categorie> categorieList);
+    }
+
+    public interface SeancesCallback {
+        void onCallback(List<Seance> seanceList);
+    }
 
     // ========================
     // ====== CLIENTS =========
@@ -61,6 +103,30 @@ public class FirebaseHelper {
             }
         });
     }
+    public void getSeanceById(String seanceId, OnSeanceLoadedListener listener) {
+        if (seanceId == null || seanceId.trim().isEmpty()) {
+            listener.onSeanceLoaded(null);
+            return;
+        }
+
+        DatabaseReference ref = FirebaseDatabase.getInstance()
+                .getReference("Seances")
+                .child(seanceId);
+
+        ref.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful() && task.getResult().exists()) {
+                Seance seance = task.getResult().getValue(Seance.class);
+                listener.onSeanceLoaded(seance);
+            } else {
+                listener.onSeanceLoaded(null);
+            }
+        });
+    }
+    public interface OnSeanceLoadedListener {
+        void onSeanceLoaded(Seance seance);
+    }
+
+
 
     public void ajouterClient(Client client, Consumer<Boolean> callback) {
         if (client.getId() == null || client.getId().isEmpty()) {
@@ -204,6 +270,104 @@ public class FirebaseHelper {
         adminRef.child("photo").setValue(photoBase64)
                 .addOnCompleteListener(task -> callback.onComplete(task.isSuccessful()));
     }
+    public void ajouterSeance(Seance seance, Consumer<Boolean> callback) {
+        String key = seance.getId();
+        if (key == null || key.isEmpty()) {
+            key = seancesRef.push().getKey();
+            if (key == null) { callback.accept(false); return; }
+            seance.setId(key);
+        }
+        seancesRef.child(key).setValue(seance)
+                .addOnSuccessListener(aVoid -> callback.accept(true))
+                .addOnFailureListener(e -> callback.accept(false));
+    }
+
+
+    // --- MODIFIER SEANCE ---
+    public void modifierSeance(Seance seance, UpdateCallback callback) {
+        if (seance.getId() == null || seance.getId().isEmpty()) { callback.onComplete(false); return; }
+        seancesRef.child(seance.getId()).setValue(seance)
+                .addOnCompleteListener(task -> callback.onComplete(task.isSuccessful()));
+    }
+
+    // --- SUPPRIMER SEANCE ---
+    public void supprimerSeance(String seanceId, UpdateCallback callback) {
+        if (seanceId == null || seanceId.isEmpty()) { callback.onComplete(false); return; }
+        seancesRef.child(seanceId).removeValue()
+                .addOnCompleteListener(task -> callback.onComplete(task.isSuccessful()));
+    }
+
+    // --- RECUPERER TOUTES LES SEANCES ---
+    public void getAllSeances(SeancesCallback callback) {
+        seancesRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
+                List<Seance> list = new ArrayList<>();
+                for (DataSnapshot s : snapshot.getChildren()) {
+                    Seance se = s.getValue(Seance.class);
+                    if (se != null) {
+                        se.setId(s.getKey()); // 🔹 garde la key firebase comme id
+                        list.add(se);
+                    }
+                }
+                callback.onCallback(list);
+            }
+            @Override public void onCancelled(@NonNull DatabaseError error) {
+                callback.onCallback(new ArrayList<>());
+            }
+        });
+    }
+
+    // --- OBTENIR UN COACH PAR ID (utile pour adapter) ---
+    public void getCoachById(String coachId, CoachesCallbackSingle callback) {
+        // CoachesCallbackSingle : nouvelle interface de callback pour un seul coach (à ajouter)
+        coachsRef.child(coachId).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Coach c = snapshot.getValue(Coach.class);
+                if (c != null) {
+                    c.setId(snapshot.getKey());
+                    callback.onCallback(c);
+                } else callback.onCallback(null);
+            }
+            @Override public void onCancelled(@NonNull DatabaseError error) { callback.onCallback(null); }
+        });
+    }
+    public interface CoachesCallbackSingle { void onCallback(Coach coach); }
+    // --- OBTENIR UNE CATEGORIE PAR ID ---
+    public void getCategorieById(String categorieId, CategoriesCallbackSingle callback) {
+        categoriesRef.child(categorieId).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Categorie c = snapshot.getValue(Categorie.class);
+                if (c != null) {
+                    c.setCategorieId(snapshot.getKey());
+                    callback.onCallback(c);
+                } else callback.onCallback(null);
+            }
+            @Override public void onCancelled(@NonNull DatabaseError error) { callback.onCallback(null); }
+        });
+    }
+
+    // interface pour catégorie single
+    public interface CategoriesCallbackSingle { void onCallback(Categorie categorie); }
+
+    // --- RECUPERER TOUTES LES CATEGORIES ---
+    public void getAllCategories(CategoriesCallback callback) {
+        categoriesRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
+                List<Categorie> list = new ArrayList<>();
+                for (DataSnapshot s : snapshot.getChildren()) {
+                    Categorie c = s.getValue(Categorie.class);
+                    if (c != null) {
+                        c.setCategorieId(s.getKey());
+                        list.add(c);
+                    }
+                }
+                callback.onCallback(list);
+            }
+            @Override public void onCancelled(@NonNull DatabaseError error) {
+                callback.onCallback(new ArrayList<>());
+            }
+        });
+    }
 
     public void getAdminPhoto(PhotoCallback callback) {
         adminRef.child("photo").addListenerForSingleValueEvent(new ValueEventListener() {
@@ -217,5 +381,6 @@ public class FirebaseHelper {
                 callback.onCallback(null);
             }
         });
+
     }
 }

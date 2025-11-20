@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <EditText
+            android:id="@+id/edtTitre"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Titre" />
+
+        <EditText
+            android:id="@+id/edtDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Date (YYYY-MM-DD)" />
+
+        <EditText
+            android:id="@+id/edtHeure"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Heure (HH:MM)" />
+
+        <EditText
+            android:id="@+id/edtDuree"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:hint="Durée (min)" />
+
+        <EditText
+            android:id="@+id/edtPrix"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="numberDecimal"
+            android:hint="Prix" />
+
+        <EditText
+            android:id="@+id/edtPlacesTotales"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:hint="Places totales" />
+
+        <EditText
+            android:id="@+id/edtPlacesDisponibles"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:hint="Places disponibles" />
+
+        <EditText
+            android:id="@+id/edtDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Description" />
+
+        <!-- Spinner pour choisir coach (affiche nom, stocke id dans tag) -->
+        <Spinner
+            android:id="@+id/spinnerCoach"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <!-- Spinner catégories -->
+        <Spinner
+            android:id="@+id/spinnerCategorie"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+</ScrollView>

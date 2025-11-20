@@ -61,10 +61,17 @@
         <color name="chip_stroke">#E5E7EB</color>
 
         <!-- Couleurs transparentes -->
-        <color name="white_20">#33FFFFFF</color>
-        <color name="white_40">#66FFFFFF</color>
-        <color name="black_10">#1A000000</color>
-        <color name="black_20">#33000000</color>
+    <color name="white_20">#33FFFFFF</color>
+    <color name="white_40">#66FFFFFF</color>
+    <color name="black_10">#1A000000</color>
+    <color name="black_20">#33000000</color>
+    <color name="violet_principal">#6C63FF</color>
+    <color name="violet_fonce">#5146D9</color>
+    <color name="gris_fond">#F5F5F5</color>
+    <color name="texte_noir">#222222</color>
+    <color name="rouge_btn">#E74C3C</color>
+    <color name="gray">#888888</color>
+    <color name="gris_fonce">#555555</color>
 
 
 </resources>

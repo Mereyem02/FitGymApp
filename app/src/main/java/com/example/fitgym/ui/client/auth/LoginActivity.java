@@ -60,6 +60,28 @@ public class LoginActivity extends AppCompatActivity {
         clientViewModel = new ViewModelProvider(this).get(ClientViewModel.class);
         mAuth = FirebaseAuth.getInstance();
         firebaseHelper = new FirebaseHelper();
+        // Dans onCreate()
+        etPassword.setOnTouchListener((v, event) -> {
+            final int DRAWABLE_RIGHT = 2; // drawableEnd
+            if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
+                if (event.getRawX() >= (etPassword.getRight() - etPassword.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width())) {
+
+                    // Vérifie si le mot de passe est visible ou pas
+                    if ((etPassword.getInputType() & android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD) == android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD) {
+                        // mot de passe visible → cacher
+                        etPassword.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                    } else {
+                        // mot de passe caché → montrer
+                        etPassword.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+                    }
+
+                    // replacer le curseur à la fin
+                    etPassword.setSelection(etPassword.getText().length());
+                    return true;
+                }
+            }
+            return false;
+        });
 
         // Bouton login classique
         btnSeConnecter.setOnClickListener(v -> loginClient());
@@ -90,15 +112,33 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        Client client = clientViewModel.login(email, password);
+        // Auth Firebase
+        mAuth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(task -> {
+                    if (!task.isSuccessful()) {
+                        Toast.makeText(this, "Email ou mot de passe incorrect", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
-        if (client != null) {
-            Toast.makeText(this, "Bienvenue " + client.getNom(), Toast.LENGTH_SHORT).show();
-            finish();
-        } else {
-            Toast.makeText(this, "Login ou mot de passe incorrect", Toast.LENGTH_SHORT).show();
-        }
+                    FirebaseUser firebaseUser = mAuth.getCurrentUser();
+                    if (firebaseUser == null) {
+                        Toast.makeText(this, "Erreur de connexion", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    // Charger depuis Firebase Database
+                    firebaseHelper.getClientById(firebaseUser.getUid(), client -> {
+                        if (client != null) {
+                            clientViewModel.inscrire(client); // sync SQLite si besoin
+                            Toast.makeText(this, "Bienvenue " + client.getNom(), Toast.LENGTH_SHORT).show();
+                            finish();
+                        } else {
+                            Toast.makeText(this, "Client non trouvé dans la base", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                });
     }
+
 
     // ==============================
     // Google Sign-In
@@ -129,6 +169,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
+
         AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
 
         mAuth.signInWithCredential(credential).addOnCompleteListener(this, task -> {
@@ -150,17 +191,14 @@ public class LoginActivity extends AppCompatActivity {
             client.setId(uid);
             client.setNom(nom);
             client.setEmail(email);
-            client.setMotDePasse(""); // jamais stocker
 
-            // Ajouter dans Firebase Database si nouveau
             firebaseHelper.ajouterClient(client, success -> {
                 if (success) {
-                    clientViewModel.inscrire(client); // sauvegarde locale SQLite
+                    clientViewModel.inscrire(client);
                     Toast.makeText(this, "Connecté avec Google : " + email, Toast.LENGTH_SHORT).show();
                     finish();
                 } else {
                     Toast.makeText(this, "Erreur ajout client Firebase", Toast.LENGTH_SHORT).show();
-                    Log.e(TAG, "Erreur ajout client Google Firebase");
                 }
             });
         });
