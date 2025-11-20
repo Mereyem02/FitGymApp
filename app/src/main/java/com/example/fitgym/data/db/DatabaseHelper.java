@@ -19,7 +19,7 @@ import java.util.UUID;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     public static final String DATABASE_NAME = "sport_app.db";
-    public static final int DATABASE_VERSION = 2;
+    public static final int DATABASE_VERSION = 5;
 
     private static final String TABLE_ADMIN = "Admin";
 
@@ -173,7 +173,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cv.put("placesDisponibles", s.getPlacesDisponibles());
         cv.put("description", s.getDescription());
         cv.put("coachId", s.getCoachId());
-        cv.put("categorieId", s.getCategorieId()); // <-- Assure-toi d'avoir setCategorieId dans Seance
+        cv.put("categorieId", s.getCategorieId());
 
         long res = db.insertWithOnConflict("seances", null, cv, SQLiteDatabase.CONFLICT_REPLACE);
         db.close();

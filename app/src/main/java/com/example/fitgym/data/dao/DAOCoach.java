@@ -33,6 +33,11 @@ public class DAOCoach {
     // --- Ajout ---
     public long ajouterCoach(Coach coach) {
         if (coach.getId() == null || coach.getId().trim().isEmpty()) return 0;
+
+        if (!db.isOpen()) {
+            throw new IllegalStateException("DB fermée ! Assure-toi qu'elle est ouverte avant d'écrire.");
+        }
+
         ContentValues values = new ContentValues();
         values.put("id", coach.getId());
         values.put("nom", coach.getNomComplet());
@@ -43,9 +48,11 @@ public class DAOCoach {
         values.put("rating", coach.getRating());
         values.put("review_count", coach.getReviewCount());
         values.put("session_count", coach.getSessionCount());
-        db.insertWithOnConflict("Coach", null, values, SQLiteDatabase.CONFLICT_REPLACE);
-        return db.insert(TABLE_COACH, null, values);
+
+        // Un seul insert suffit
+        return db.insertWithOnConflict(TABLE_COACH, null, values, SQLiteDatabase.CONFLICT_REPLACE);
     }
+
 
 
     // ✅ Suppression d’un coach sans ID (secours)
