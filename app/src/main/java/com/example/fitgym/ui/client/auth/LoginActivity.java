@@ -21,7 +21,10 @@ import com.example.fitgym.R;
 import com.example.fitgym.data.dao.DAOClient;
 import com.example.fitgym.data.db.DatabaseHelper;
 import com.example.fitgym.data.db.FirebaseHelper;
+import com.example.fitgym.data.model.Admin;
 import com.example.fitgym.data.model.Client;
+import com.example.fitgym.ui.admin.LoginAdminActivity;
+import com.example.fitgym.ui.admin.MainActivityAdmin;
 import com.google.android.gms.auth.api.signin.*;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.tasks.Task;
@@ -111,47 +114,44 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        DAOClient daoClient = new DAOClient(this);
+
 
         if (!isNetworkAvailable()) {
-            // Offline login
-            Client client = daoClient.obtenirClientParEmail(email);
-            if (client != null && client.getMotDePasse().equals(password)) {
+            DAOClient daoClient = new DAOClient(this);
+            Client localClient = daoClient.obtenirClientParEmail(email);
+            // OFFLINE login
+            if (localClient != null && password.equals(localClient.getMotDePasse())) {
                 Toast.makeText(this, "Connexion hors ligne réussie ✅", Toast.LENGTH_SHORT).show();
                 finish();
             } else {
                 Toast.makeText(this, "Identifiants incorrects (offline) ❌", Toast.LENGTH_SHORT).show();
             }
-            return;
         }
-
-        // Online Firebase login
-        mAuth.signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener(task -> {
-                    if (!task.isSuccessful()) {
-                        Toast.makeText(this, "Identifiants incorrects (Firebase) ❌", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    FirebaseUser user = mAuth.getCurrentUser();
-                    if (user == null) {
-                        Toast.makeText(this, "Erreur de connexion", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    firebaseHelper.getClientById(user.getUid(), client -> {
-                        if (client != null) {
-                            // Sync local database
-                            client.setMotDePasse(password); // sauvegarde du mdp pour login offline
-                            daoClient.modifierClient(client); // correction : appel instance
-                            Toast.makeText(this, "Bienvenue " + client.getNom() + " ✅", Toast.LENGTH_SHORT).show();
+        else {
+            // MODE ONLINE → Firebase
+            FirebaseHelper firebaseHelper = new FirebaseHelper();
+            firebaseHelper.getClient(new FirebaseHelper.ClientCallback() {
+                @Override
+                public void onCallback(Client client) {
+                    if (client != null && client.getEmail().equals(email) && client.getMotDePasse().equals(password)) {
+                        runOnUiThread(() -> {
+                            Toast.makeText(LoginActivity.this, "Bienvenue " + client.getEmail() + " ! ✅", Toast.LENGTH_SHORT).show();
+                            dbHelper.syncClient(client);
+                            startActivity(new Intent(LoginActivity.this, MainActivityAdmin.class));
                             finish();
-                        } else {
-                            Toast.makeText(this, "Compte supprimé côté serveur ❌", Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                });
+                        });
+                    } else {
+                        runOnUiThread(() ->
+                                Toast.makeText(LoginActivity.this, "Login ou mot de passe incorrect ❌", Toast.LENGTH_SHORT).show()
+                        );
+                    }
+                }
+
+            });
+        }
     }
+
+
 
     private boolean isNetworkAvailable() {
         ConnectivityManager cm =

@@ -94,87 +94,84 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     // -------------------- Inscription client --------------------
-    private void inscrireClient() {
-        String nom = inputNom.getText().toString().trim();
-        String email = inputEmail.getText().toString().trim();
-        String telephone = inputTelephone.getText().toString().trim();
-        String password = inputPassword.getText().toString().trim();
 
-        if (TextUtils.isEmpty(nom) || TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
-            Toast.makeText(this, "Remplissez tous les champs", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        private void inscrireClient () {
+            String nom = inputNom.getText().toString().trim();
+            String email = inputEmail.getText().toString().trim();
+            String telephone = inputTelephone.getText().toString().trim();
+            String password = inputPassword.getText().toString().trim();
 
-        if (!hasInternet()) {
-            // -------------------- Mode hors-ligne --------------------
-            Client client = new Client();
-            client.setId(String.valueOf(System.currentTimeMillis())); // ID local temporaire
-            client.setNom(nom);
-            client.setEmail(email);
-            client.setTelephone(telephone);
-            client.setMotDePasse(password);
-            client.setSynced(false);
+            if (TextUtils.isEmpty(nom) || TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
+                Toast.makeText(this, "Remplissez tous les champs", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
             DAOClient dao = new DAOClient(this);
-            dao.ajouterClient(client);
-            clientViewModel.inscrire(client);
 
-            Toast.makeText(this, "Compte enregistré hors-ligne ✅", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
+            if (!hasInternet()) {
+                // -------------------- MODE HORS LIGNE --------------------
+                Client client = new Client();
+                client.setId(String.valueOf(System.currentTimeMillis())); // ID temporaire
+                client.setNom(nom);
+                client.setEmail(email);
+                client.setTelephone(telephone);
+                client.setMotDePasse(password);
+                client.setSynced(false);
+
+                dao.ajouterClient(client);
+                clientViewModel.inscrire(client);
+
+                Toast.makeText(this, "Compte enregistré hors-ligne ✅", Toast.LENGTH_SHORT).show();
+                finish();
+                return;
+            }
+
+            // -------------------- MODE EN LIGNE --------------------
+            mAuth.fetchSignInMethodsForEmail(email).addOnCompleteListener(task -> {
+                if (!task.isSuccessful()) {
+                    Toast.makeText(this, "Erreur vérification email", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                boolean isNewUser = task.getResult().getSignInMethods().isEmpty();
+                if (!isNewUser) {
+                    Toast.makeText(this, "Email déjà utilisé ❌", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                mAuth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(createTask -> {
+                    if (!createTask.isSuccessful()) {
+                        Toast.makeText(this, "Erreur création compte: " + createTask.getException().getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    FirebaseUser firebaseUser = mAuth.getCurrentUser();
+                    if (firebaseUser == null) return;
+
+                    Client client = new Client();
+                    client.setId(firebaseUser.getUid());
+                    client.setNom(nom);
+                    client.setEmail(email);
+                    client.setTelephone(telephone);
+                    client.setMotDePasse(""); // pas stocker mdp Firebase
+                    client.setSynced(true);
+
+                    firebaseHelper.ajouterClient(client, success -> {
+                        if (success) {
+                            dbHelper.syncClient(client); // mise à jour SQLite
+                            clientViewModel.inscrire(client);
+                            Toast.makeText(this, "Compte créé avec succès ✅", Toast.LENGTH_SHORT).show();
+                            finish();
+                        } else {
+                            Toast.makeText(this, "Erreur ajout Firebase ❌", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                });
+            });
         }
 
-        // -------------------- Mode en ligne --------------------
-        mAuth.fetchSignInMethodsForEmail(email)
-                .addOnCompleteListener(task -> {
-                    if (!task.isSuccessful()) {
-                        Toast.makeText(this, "Erreur vérification email", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    boolean isNewUser = task.getResult().getSignInMethods().isEmpty();
-                    if (!isNewUser) {
-                        Toast.makeText(this, "Email déjà utilisé", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    // Créer compte Firebase Auth
-                    mAuth.createUserWithEmailAndPassword(email, password)
-                            .addOnCompleteListener(createTask -> {
-                                if (!createTask.isSuccessful()) {
-                                    Toast.makeText(this,
-                                            "Erreur création compte: " + createTask.getException().getMessage(),
-                                            Toast.LENGTH_SHORT).show();
-                                    return;
-                                }
-
-                                FirebaseUser firebaseUser = mAuth.getCurrentUser();
-                                if (firebaseUser == null) return;
-
-                                Client client = new Client();
-                                client.setId(firebaseUser.getUid());
-                                client.setNom(nom);
-                                client.setEmail(email);
-                                client.setTelephone(telephone);
-                                client.setMotDePasse(""); // ne pas stocker mot de passe Firebase
-                                client.setSynced(true);
-
-                                // Ajouter dans Firestore + local
-                                firebaseHelper.ajouterClient(client, success -> {
-                                    if (success) {
-                                        dbHelper.syncClient(client, password); // sync local
-                                        clientViewModel.inscrire(client);
-                                        Toast.makeText(this, "Compte créé avec succès ✅", Toast.LENGTH_SHORT).show();
-                                        finish();
-                                    } else {
-                                        Toast.makeText(this, "Erreur ajout Firebase ❌", Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                            });
-                });
-    }
-
-    // -------------------- Google Sign-In --------------------
+        // -------------------- Google Sign-In --------------------
     private void googleSignIn() {
         Intent signInIntent = googleSignInClient.getSignInIntent();
         startActivityForResult(signInIntent, RC_SIGN_IN);

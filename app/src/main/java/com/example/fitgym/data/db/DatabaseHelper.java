@@ -378,12 +378,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return rows > 0;
     }
 
-    public void syncClient(Client client, String password) {
+    public void syncClient(Client client) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put("nom", client.getNom());
         values.put("email", client.getEmail());
-        values.put("motDePasse", password); // <- nom exact dans la table
 
         db.insertWithOnConflict("Client", null, values, SQLiteDatabase.CONFLICT_REPLACE);
         db.close();

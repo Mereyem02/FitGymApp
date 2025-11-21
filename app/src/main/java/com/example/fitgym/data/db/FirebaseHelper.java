@@ -34,6 +34,36 @@ public class FirebaseHelper {
         categoriesRef = db.getReference("categories");
         seancesRef = db.getReference("seances");
     }
+
+    public void getClient(ClientCallback clientCallback) {
+        clientsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    // Prend le premier client trouvé
+                    for (DataSnapshot snap : snapshot.getChildren()) {
+                        Client client = snap.getValue(Client.class);
+                        if (client != null) {
+                            client.setId(snap.getKey());
+                            clientCallback.onCallback(client);
+                            return;
+                        }
+                    }
+                    clientCallback.onCallback(null);
+                } else {
+                    clientCallback.onCallback(null);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                clientCallback.onCallback(null);
+            }
+        });
+    }
+
+
+
     public interface ClientCallback { void onCallback(Client client); }
 
     public void getClientById(String uid, ClientCallback callback) {

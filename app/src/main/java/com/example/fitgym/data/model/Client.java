@@ -1,5 +1,8 @@
 package com.example.fitgym.data.model;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Client {
 
     private String id;
@@ -10,6 +13,15 @@ public class Client {
 
 
     public Client() {}
+    public Map<String, Object> toMap() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", id);
+        map.put("nom", nom);
+        map.put("email", email);
+        map.put("motDePasse", motDePasse);
+        map.put("telephone", telephone);
+        return map;
+    }
 
     public Client(String id, String nom, String email, String password, String telephone) {
         this.id = id;

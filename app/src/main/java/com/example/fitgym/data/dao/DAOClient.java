@@ -95,7 +95,7 @@ public class DAOClient {
     // ------------------------------
     //    LISTER TOUS LES CLIENTS
     // ------------------------------
-    public List<Client> listerClients() {
+    public  List<Client> listerClients() {
         open();
         List<Client> liste = new ArrayList<>();
 

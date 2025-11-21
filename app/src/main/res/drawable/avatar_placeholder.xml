@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp"
+    android:height="40dp"
+    android:viewportWidth="40"
+    android:viewportHeight="40">
+
+    <!-- Fond circulaire -->
+    <path
+        android:fillColor="#E5E7EB"
+        android:pathData="M20,20m-20,0a20,20 0,1 1,40 0a20,20 0,1 1,-40 0"/>
+
+    <!-- Tête de la personne -->
+    <path
+        android:fillColor="#9CA3AF"
+        android:pathData="M20,12.5c2.75,0 5,2.25 5,5c0,2.75 -2.25,5 -5,5c-2.75,0 -5,-2.25 -5,-5C15,14.75 17.25,12.5 20,12.5z"/>
+
+    <!-- Corps de la personne -->
+    <path
+        android:fillColor="#9CA3AF"
+        android:pathData="M20,24c-6,0 -11,4 -11,9v7h22v-7C31,28 26,24 20,24z"/>
+</vector>

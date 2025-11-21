@@ -1,12 +1,15 @@
 package com.example.fitgym.data.repository;
 
+
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 
 import com.example.fitgym.data.dao.DAOCoach;
 import com.example.fitgym.data.db.DatabaseHelper;
 import com.example.fitgym.data.model.Coach;
+import com.google.firebase.firestore.DocumentSnapshot;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class CoachRepository {
@@ -19,6 +22,7 @@ public class CoachRepository {
         SQLiteDatabase db = helper.getWritableDatabase();
         daoCoach = new DAOCoach(db);
     }
+
 
     public Coach obtenirCoachParId(String id) {
         return daoCoach.obtenirCoachParId(id);
