@@ -1,49 +1,44 @@
 package com.example.fitgym.ui.client.auth;
 
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ProgressBar;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.ViewModelProvider;
 
 import com.example.fitgym.R;
+import com.example.fitgym.data.db.DatabaseHelper;
 import com.example.fitgym.data.db.FirebaseHelper;
 import com.example.fitgym.data.model.Client;
-import com.example.fitgym.ui.viewmodel.ClientViewModel;
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.auth.api.signin.*;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthCredential;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.auth.*;
 
 public class LoginActivity extends AppCompatActivity {
 
     private EditText etLogin, etPassword;
     private Button btnSeConnecter;
     private TextView tvGoToRegister, tvForgotPassword;
-    private ProgressBar progressBar;
     private SignInButton btnGoogleSignIn;
 
-    private ClientViewModel clientViewModel;
-    private GoogleSignInClient googleSignInClient;
     private FirebaseAuth mAuth;
     private FirebaseHelper firebaseHelper;
+    private GoogleSignInClient googleSignInClient;
+    private DatabaseHelper dbHelper;
 
     private static final int RC_SIGN_IN = 1000;
-    private static final String TAG = "LoginActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,27 +50,38 @@ public class LoginActivity extends AppCompatActivity {
         btnSeConnecter = findViewById(R.id.btnSeConnecter1);
         tvGoToRegister = findViewById(R.id.tvGoToRegister1);
         tvForgotPassword = findViewById(R.id.tvForgotPassword);
-        btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn); // Assure-toi d'avoir le SignInButton dans ton layout
+        btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn);
+        LinearLayout rootLayout = findViewById(R.id.rootLayout);
+        Animation formAnim = AnimationUtils.loadAnimation(this, R.anim.form_anim);
+        rootLayout.startAnimation(formAnim);
 
-        clientViewModel = new ViewModelProvider(this).get(ClientViewModel.class);
+        Button btnSeConnecter = findViewById(R.id.btnSeConnecter1);
+        btnSeConnecter.setOnClickListener(v -> {
+            // bouton click animation
+            Animation clickAnim = AnimationUtils.loadAnimation(this, R.anim.button_click);
+            v.startAnimation(clickAnim);
+
+            // lancer la connexion après l'animation
+            v.postDelayed(this::loginClient, 150);
+        });
+
         mAuth = FirebaseAuth.getInstance();
         firebaseHelper = new FirebaseHelper();
-        // Dans onCreate()
+        dbHelper = new DatabaseHelper(this);
+
+        // Toggle password visibility
         etPassword.setOnTouchListener((v, event) -> {
-            final int DRAWABLE_RIGHT = 2; // drawableEnd
+            final int DRAWABLE_RIGHT = 2;
             if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
                 if (event.getRawX() >= (etPassword.getRight() - etPassword.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width())) {
-
-                    // Vérifie si le mot de passe est visible ou pas
-                    if ((etPassword.getInputType() & android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD) == android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD) {
-                        // mot de passe visible → cacher
-                        etPassword.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                    if ((etPassword.getInputType() & android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD) ==
+                            android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD) {
+                        etPassword.setInputType(android.text.InputType.TYPE_CLASS_TEXT |
+                                android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
                     } else {
-                        // mot de passe caché → montrer
-                        etPassword.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+                        etPassword.setInputType(android.text.InputType.TYPE_CLASS_TEXT |
+                                android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
                     }
-
-                    // replacer le curseur à la fin
                     etPassword.setSelection(etPassword.getText().length());
                     return true;
                 }
@@ -83,21 +89,26 @@ public class LoginActivity extends AppCompatActivity {
             return false;
         });
 
-        // Bouton login classique
         btnSeConnecter.setOnClickListener(v -> loginClient());
 
-        // Aller vers RegisterActivity
-        tvGoToRegister.setOnClickListener(v -> startActivity(new Intent(this, RegisterActivity.class)));
-        tvForgotPassword.setOnClickListener(v -> {
-            Intent intent = new Intent(this, RecoverPasswordActivity.class);
+        tvGoToRegister.setOnClickListener(v -> {
+            Intent intent = new Intent(this, RegisterActivity.class);
             startActivity(intent);
+            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
         });
 
-        // Config Google Sign-In
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(getString(R.string.default_web_client_id)) // mettre ton web client id
-                .requestEmail()
-                .build();
+
+        tvForgotPassword.setOnClickListener(v ->
+                startActivity(new Intent(this, RecoverPasswordActivity.class))
+        );
+
+        // Google Sign-In config
+        GoogleSignInOptions gso =
+                new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                        .requestIdToken(getString(R.string.default_web_client_id))
+                        .requestEmail()
+                        .build();
+
         googleSignInClient = GoogleSignIn.getClient(this, gso);
 
         btnGoogleSignIn.setOnClickListener(v -> googleSignIn());
@@ -112,37 +123,57 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        // Auth Firebase
+        if (!isNetworkAvailable()) {
+            // Offline mode
+            Client client = dbHelper.getClient(email, password);
+            if (client != null) {
+                Toast.makeText(this, "Connexion hors ligne réussie ✅", Toast.LENGTH_SHORT).show();
+                finish();
+            } else {
+                Toast.makeText(this, "Identifiants incorrects (offline) ❌", Toast.LENGTH_SHORT).show();
+            }
+            return;
+        }
+
+        // Online Firebase authentication
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (!task.isSuccessful()) {
-                        Toast.makeText(this, "Email ou mot de passe incorrect", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Identifiants incorrects (Firebase) ❌", Toast.LENGTH_SHORT).show();
+                        // Supprimer localement si existait
+                        dbHelper.deleteClient(email);
                         return;
                     }
 
-                    FirebaseUser firebaseUser = mAuth.getCurrentUser();
-                    if (firebaseUser == null) {
+                    FirebaseUser user = mAuth.getCurrentUser();
+                    if (user == null) {
                         Toast.makeText(this, "Erreur de connexion", Toast.LENGTH_SHORT).show();
+                        dbHelper.deleteClient(email);
                         return;
                     }
 
-                    // Charger depuis Firebase Database
-                    firebaseHelper.getClientById(firebaseUser.getUid(), client -> {
+                    firebaseHelper.getClientById(user.getUid(), client -> {
                         if (client != null) {
-                            clientViewModel.inscrire(client); // sync SQLite si besoin
-                            Toast.makeText(this, "Bienvenue " + client.getNom(), Toast.LENGTH_SHORT).show();
+                            // Sync local database
+                            dbHelper.syncClient(client, password);
+                            Toast.makeText(this, "Bienvenue " + client.getNom() + " ✅", Toast.LENGTH_SHORT).show();
                             finish();
                         } else {
-                            Toast.makeText(this, "Client non trouvé dans la base", Toast.LENGTH_SHORT).show();
+                            // Supprimer local si Firebase n’a plus le compte
+                            dbHelper.deleteClient(email);
+                            Toast.makeText(this, "Compte supprimé côté serveur ❌", Toast.LENGTH_SHORT).show();
                         }
                     });
                 });
     }
 
+    private boolean isNetworkAvailable() {
+        ConnectivityManager cm =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo net = cm.getActiveNetworkInfo();
+        return net != null && net.isConnected();
+    }
 
-    // ==============================
-    // Google Sign-In
-    // ==============================
     private void googleSignIn() {
         Intent signInIntent = googleSignInClient.getSignInIntent();
         startActivityForResult(signInIntent, RC_SIGN_IN);
@@ -153,54 +184,58 @@ public class LoginActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == RC_SIGN_IN) {
-            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            Task<GoogleSignInAccount> task =
+                    GoogleSignIn.getSignedInAccountFromIntent(data);
+
             try {
                 GoogleSignInAccount account = task.getResult(Exception.class);
+
                 if (account != null) {
                     firebaseAuthWithGoogle(account);
                 } else {
-                    Toast.makeText(this, "Erreur Google Sign-In", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Erreur Google Sign-In ❌", Toast.LENGTH_SHORT).show();
                 }
+
             } catch (Exception e) {
                 e.printStackTrace();
-                Toast.makeText(this, "Connexion Google échouée", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Connexion Google échouée ❌", Toast.LENGTH_SHORT).show();
             }
         }
     }
 
     private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
+        AuthCredential credential =
+                GoogleAuthProvider.getCredential(acct.getIdToken(), null);
 
-        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, task -> {
 
-        mAuth.signInWithCredential(credential).addOnCompleteListener(this, task -> {
+                    if (!task.isSuccessful()) {
+                        Toast.makeText(this, "Échec authentification Firebase ❌", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
-            if (!task.isSuccessful()) {
-                Toast.makeText(this, "Échec authentification Firebase", Toast.LENGTH_SHORT).show();
-                Log.e(TAG, "Erreur FirebaseAuth Google", task.getException());
-                return;
-            }
+                    FirebaseUser user = mAuth.getCurrentUser();
+                    if (user == null) return;
 
-            FirebaseUser firebaseUser = mAuth.getCurrentUser();
-            if (firebaseUser == null) return;
+                    String uid = user.getUid();
+                    String nom = user.getDisplayName();
+                    String email = user.getEmail();
 
-            String uid = firebaseUser.getUid();
-            String nom = firebaseUser.getDisplayName();
-            String email = firebaseUser.getEmail();
+                    Client client = new Client();
+                    client.setId(uid);
+                    client.setNom(nom);
+                    client.setEmail(email);
 
-            Client client = new Client();
-            client.setId(uid);
-            client.setNom(nom);
-            client.setEmail(email);
-
-            firebaseHelper.ajouterClient(client, success -> {
-                if (success) {
-                    clientViewModel.inscrire(client);
-                    Toast.makeText(this, "Connecté avec Google : " + email, Toast.LENGTH_SHORT).show();
-                    finish();
-                } else {
-                    Toast.makeText(this, "Erreur ajout client Firebase", Toast.LENGTH_SHORT).show();
-                }
-            });
-        });
+                    firebaseHelper.ajouterClient(client, success -> {
+                        if (success) {
+                            dbHelper.syncClient(client, "");
+                            Toast.makeText(this, "Connecté avec Google ✅", Toast.LENGTH_SHORT).show();
+                            finish();
+                        } else {
+                            Toast.makeText(this, "Erreur ajout client Firebase ❌", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                });
     }
 }

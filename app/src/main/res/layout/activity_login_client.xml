@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -10,8 +11,8 @@
     <!-- Logo -->
     <ImageView
         android:id="@+id/logoImage"
-        android:layout_width="150dp"
-        android:layout_height="wrap_content"
+        android:layout_width="171dp"
+        android:layout_height="126dp"
         android:layout_marginBottom="16dp"
         android:contentDescription="Logo de l'application"
         android:src="@drawable/iconlogin" />
@@ -20,9 +21,9 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Login"
+        android:text="Login :"
         android:textSize="16sp"
-        android:textColor="#2196F3"
+        android:textColor="#516EF3"
         android:layout_marginBottom="8dp"
         android:textStyle="bold"
          />
@@ -43,9 +44,9 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Mot de Passe"
+        android:text="Mot de Passe :"
         android:textSize="16sp"
-        android:textColor="#2196F3"
+        android:textColor="#516EF3"
         android:layout_marginBottom="8dp"
         android:textStyle="bold"
 
@@ -72,7 +73,7 @@
         android:layout_gravity="end"
         android:layout_marginBottom="24dp"
         android:text="Mot de passe oublié ?"
-        android:textColor="#2196F3"
+        android:textColor="#516EF3"
         android:textStyle="bold"
         android:clickable="true"
         android:focusable="true"
@@ -84,7 +85,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Se connecter"
-        android:backgroundTint="#1976D2"
+        android:backgroundTint="#516EF3"
         android:textColor="@android:color/white"
         android:layout_marginBottom="16dp" />
 
@@ -95,7 +96,7 @@
         android:layout_marginTop="16dp"
         android:layout_marginBottom="8dp"
         android:text="OU"
-        android:textColor="#2196F3"
+        android:textColor="#516EF3"
         android:textSize="16sp"
         android:textStyle="bold" />
 
@@ -104,7 +105,9 @@
         android:id="@+id/btnGoogleSignIn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp" />
+        android:layout_marginBottom="24dp"
+        android:textColor="#516EF3"
+        />
 
 
 
@@ -114,7 +117,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Pas de compte ? S'inscrire"
-        android:textColor="#2196F3"
+        android:textColor="#516EF3"
         android:textStyle="bold"
         android:clickable="true"
         android:focusable="true"

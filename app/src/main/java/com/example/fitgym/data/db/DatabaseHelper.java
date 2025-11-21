@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import com.example.fitgym.data.model.Admin;
 import com.example.fitgym.data.model.Categorie;
+import com.example.fitgym.data.model.Client;
 import com.example.fitgym.data.model.Coach;
 import com.example.fitgym.data.model.Seance;
 
@@ -329,4 +330,41 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
         return c;
     }
+    public Client getClient(String email, String password) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor c = db.rawQuery(
+                "SELECT * FROM Client WHERE email=? AND motDePasse=?",
+                new String[]{email, password}
+        );
+
+        Client client = null;
+        if (c != null && c.moveToFirst()) {
+            client = new Client();
+            client.setId(c.getString(c.getColumnIndexOrThrow("id")));
+            client.setNom(c.getString(c.getColumnIndexOrThrow("nom")));
+            client.setEmail(c.getString(c.getColumnIndexOrThrow("email")));
+            c.close();
+        }
+        db.close();
+        return client;
+    }
+    public boolean deleteClient(String email) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        int rows = db.delete("Client", "email=?", new String[]{email});
+        db.close();
+        return rows > 0;
+    }
+
+    public void syncClient(Client client, String password) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("id", client.getId());
+        values.put("nom", client.getNom());
+        values.put("email", client.getEmail());
+        values.put("motDePasse", password); // <- nom exact dans la table
+
+        db.insertWithOnConflict("Client", null, values, SQLiteDatabase.CONFLICT_REPLACE);
+        db.close();
+    }
+
 }

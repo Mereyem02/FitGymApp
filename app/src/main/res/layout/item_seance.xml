@@ -138,22 +138,34 @@
 
                 <Button
                     android:id="@+id/btnModifier"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
                     android:layout_width="wrap_content"
-                    android:layout_height="35dp"
+                    android:layout_height="40dp"
+                    android:layout_marginEnd="1dp"
                     android:text="Modifier"
-                    android:textSize="13sp"
-                    android:backgroundTint="#EEEEEE"
-                    android:textColor="@color/texte_noir"/>
+                    android:textAllCaps="false"
+                    android:textColor="#9C27B0"
+                    android:textSize="10sp"
+                    app:icon="@drawable/ic_edit"
+                    app:iconSize="14dp"
+                    app:iconTint="#9C27B0"
+                    app:strokeColor="#9C27B0"
+                    app:strokeWidth="1dp" />
 
                 <Button
                     android:id="@+id/btnSupprimer"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton.Icon"
                     android:layout_width="wrap_content"
-                    android:layout_height="35dp"
+                    android:layout_height="40dp"
                     android:text="Supprimer"
-                    android:textSize="13sp"
-                    android:layout_marginStart="8dp"
-                    android:backgroundTint="@color/rouge_btn"
-                    android:textColor="@android:color/white"/>
+                    android:textAllCaps="false"
+                    android:textColor="#B42C3E"
+                    android:textSize="10sp"
+                    app:icon="@drawable/ic_delete"
+                    app:iconSize="14dp"
+                    app:iconTint="#CE1010"
+                    app:strokeColor="#DE0D0D"
+                    app:strokeWidth="1dp" />
             </LinearLayout>
 
         </LinearLayout>

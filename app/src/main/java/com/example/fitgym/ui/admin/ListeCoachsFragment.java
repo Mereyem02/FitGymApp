@@ -235,7 +235,7 @@ public class ListeCoachsFragment extends Fragment {
         MaterialButton btnChoisirImage = vueDialog.findViewById(R.id.inputUrlImage);
         Button btnAnnuler = vueDialog.findViewById(R.id.btnAnnuler);
         Button btnAjouter = vueDialog.findViewById(R.id.btnModifier);
-        ImageView preview = vueDialog.findViewById(R.id.imagePreview);
+        ImageView preview = vueDialog.findViewById(R.id.imagePreview1);
 
         preview.setImageResource(R.drawable.ic_placeholder);
         imagePreviewActive = preview;

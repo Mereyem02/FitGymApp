@@ -1,8 +1,7 @@
 package com.example.fitgym.data.model;
 
 
-public class
-Seance {
+public class Seance {
 
     private String id;
     private String titre;

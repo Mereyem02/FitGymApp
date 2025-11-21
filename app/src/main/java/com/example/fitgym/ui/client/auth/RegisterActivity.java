@@ -1,10 +1,11 @@
 package com.example.fitgym.ui.client.auth;
 
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -28,6 +29,7 @@ import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+
 public class RegisterActivity extends AppCompatActivity {
 
     private EditText inputNom, inputEmail, inputTelephone, inputPassword;
@@ -38,9 +40,15 @@ public class RegisterActivity extends AppCompatActivity {
     private ClientViewModel clientViewModel;
     private GoogleSignInClient googleSignInClient;
     private static final int RC_SIGN_IN = 1000;
+
     private FirebaseAuth mAuth;
     private FirebaseHelper firebaseHelper;
-    private static final String TAG = "RegisterActivity";
+    @Override
+    public void finish() {
+        super.finish();
+        overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +62,7 @@ public class RegisterActivity extends AppCompatActivity {
         btnRegister = findViewById(R.id.btnRegister);
         tvGoToLogin = findViewById(R.id.tvGoToLogin);
         btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn);
+
         clientViewModel = new ViewModelProvider(this).get(ClientViewModel.class);
         mAuth = FirebaseAuth.getInstance();
         firebaseHelper = new FirebaseHelper();
@@ -64,13 +73,23 @@ public class RegisterActivity extends AppCompatActivity {
                 .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
+
         googleSignInClient = GoogleSignIn.getClient(this, gso);
 
-        btnRegister.setOnClickListener(v -> inscrireClientFirebase());
+        btnRegister.setOnClickListener(v -> inscrireClient());
         btnGoogleSignIn.setOnClickListener(v -> googleSignIn());
     }
 
-    private void inscrireClientFirebase() {
+    // Vérifier Internet
+    private boolean hasInternet() {
+        ConnectivityManager cm = (ConnectivityManager)
+                getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        NetworkInfo net = cm.getActiveNetworkInfo();
+        return net != null && net.isConnected();
+    }
+
+    private void inscrireClient() {
         String nom = inputNom.getText().toString().trim();
         String email = inputEmail.getText().toString().trim();
         String telephone = inputTelephone.getText().toString().trim();
@@ -81,15 +100,38 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
+        // =========================
+        // MODE OFFLINE
+        // =========================
+        if (!hasInternet()) {
+            Client client = new Client();
+            client.setId(String.valueOf(System.currentTimeMillis())); // id temporaire
+            client.setNom(nom);
+            client.setEmail(email);
+            client.setTelephone(telephone);
+            client.setMotDePasse(password);
+            client.setSynced(false);
 
-        // Vérifier si l’email existe déjà
+            clientViewModel.inscrire(client);
+            Toast.makeText(this, "Compte enregistré hors-ligne", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        // =========================
+        // MODE ONLINE (FIREBASE)
+        // =========================
         mAuth.fetchSignInMethodsForEmail(email)
                 .addOnCompleteListener(task -> {
+
                     if (!task.isSuccessful()) {
                         Toast.makeText(this, "Erreur vérification email", Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    boolean isNewUser = task.getResult().getSignInMethods().isEmpty();
+
+                    boolean isNewUser =
+                            task.getResult().getSignInMethods().isEmpty();
+
                     if (!isNewUser) {
                         Toast.makeText(this, "Email déjà utilisé", Toast.LENGTH_SHORT).show();
                         return;
@@ -99,7 +141,12 @@ public class RegisterActivity extends AppCompatActivity {
                     mAuth.createUserWithEmailAndPassword(email, password)
                             .addOnCompleteListener(createTask -> {
                                 if (!createTask.isSuccessful()) {
-                                    Toast.makeText(this, "Erreur création compte: " + createTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(
+                                            this,
+                                            "Erreur création compte: "
+                                                    + createTask.getException().getMessage(),
+                                            Toast.LENGTH_SHORT
+                                    ).show();
                                     return;
                                 }
 
@@ -107,53 +154,71 @@ public class RegisterActivity extends AppCompatActivity {
                                 if (firebaseUser == null) return;
 
                                 String uid = firebaseUser.getUid();
+
                                 Client client = new Client();
                                 client.setId(uid);
                                 client.setNom(nom);
                                 client.setEmail(email);
                                 client.setTelephone(telephone);
-                                client.setMotDePasse(""); // jamais stocker le vrai mdp
+                                client.setMotDePasse("");
+                                client.setSynced(true);
 
                                 firebaseHelper.ajouterClient(client, success -> {
                                     if (success) {
-                                        clientViewModel.inscrire(client); // sauvegarde locale
-                                        Toast.makeText(this, "Compte créé avec succès !", Toast.LENGTH_SHORT).show();
+                                        clientViewModel.inscrire(client);
+                                        Toast.makeText(this,
+                                                "Compte créé avec succès !",
+                                                Toast.LENGTH_SHORT).show();
                                         finish();
                                     } else {
-                                        Toast.makeText(this, "Erreur lors de l'ajout dans Firebase", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(this,
+                                                "Erreur d'ajout Firebase",
+                                                Toast.LENGTH_SHORT).show();
                                     }
                                 });
                             });
                 });
     }
 
+    // GOOGLE SIGN-IN
     private void googleSignIn() {
         Intent signInIntent = googleSignInClient.getSignInIntent();
         startActivityForResult(signInIntent, RC_SIGN_IN);
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode,
+                                    @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
         if (requestCode == RC_SIGN_IN) {
-            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            Task<GoogleSignInAccount> task =
+                    GoogleSignIn.getSignedInAccountFromIntent(data);
+
             try {
                 GoogleSignInAccount account = task.getResult(Exception.class);
                 if (account != null) firebaseAuthWithGoogle(account);
             } catch (Exception e) {
                 e.printStackTrace();
-                Toast.makeText(this, "Connexion Google échouée", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this,
+                        "Connexion Google échouée",
+                        Toast.LENGTH_SHORT).show();
             }
         }
     }
 
     private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
-        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+
+        AuthCredential credential =
+                GoogleAuthProvider.getCredential(acct.getIdToken(), null);
 
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
+
                     if (!task.isSuccessful()) {
-                        Toast.makeText(this, "Échec authentification Firebase", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this,
+                                "Échec authentification Firebase",
+                                Toast.LENGTH_SHORT).show();
                         return;
                     }
 
@@ -169,9 +234,11 @@ public class RegisterActivity extends AppCompatActivity {
                     client.setNom(nom);
                     client.setEmail(email);
                     client.setMotDePasse("");
+                    client.setSynced(true);
 
-                    // Ajouter seulement si nouveau
+                    // Vérifier si déjà dans Firebase
                     firebaseHelper.getClient(uid, existingClient -> {
+
                         if (existingClient == null) {
                             firebaseHelper.ajouterClient(client, success -> {
                                 if (success) clientViewModel.inscrire(client);
@@ -179,7 +246,10 @@ public class RegisterActivity extends AppCompatActivity {
                         } else {
                             clientViewModel.inscrire(existingClient);
                         }
-                        Toast.makeText(this, "Connecté avec Google : " + email, Toast.LENGTH_SHORT).show();
+
+                        Toast.makeText(this,
+                                "Connecté avec Google : " + email,
+                                Toast.LENGTH_SHORT).show();
                         finish();
                     });
                 });

@@ -5,6 +5,7 @@
     android:background="@color/white">
 
     <LinearLayout
+        android:id="@+id/rootLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
@@ -14,24 +15,25 @@
         <!-- Logo -->
         <ImageView
             android:id="@+id/logoImage"
-            android:layout_width="150dp"
-            android:layout_height="wrap_content"
+            android:layout_width="162dp"
+            android:layout_height="98dp"
             android:layout_marginBottom="16dp"
             android:contentDescription="Logo"
             android:src="@drawable/iconlogin" />
 
         <!-- Titre -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingBottom="16dp"
-            android:text="Créer un compte"
-            android:textColor="#2196F3"
-            android:textSize="24sp"
-            android:textStyle="bold|italic" />
 
         <!-- Nom -->
         <!-- Nom complet -->
+        <TextView
+            android:layout_width="260dp"
+            android:layout_height="wrap_content"
+            android:paddingBottom="16dp"
+            android:text="    Créer un compte :"
+            android:textColor="#516EF3"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
         <EditText
             android:id="@+id/inputNom"
             android:layout_width="match_parent"
@@ -94,7 +96,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:backgroundTint="#1976D2"
+            android:backgroundTint="#516EF3"
             android:text="Créer mon compte"
             android:textColor="@android:color/white" />
 
@@ -105,7 +107,7 @@
             android:layout_marginTop="16dp"
             android:layout_marginBottom="8dp"
             android:text="OU"
-            android:textColor="#2196F3"
+            android:textColor="#516EF3"
             android:textSize="16sp"
             android:textStyle="bold" />
 
@@ -114,7 +116,7 @@
             android:id="@+id/btnGoogleSignIn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp" />
+            android:layout_marginBottom="20dp" />
 
         <!-- Déjà un compte ? -->
         <TextView
@@ -126,7 +128,7 @@
             android:focusable="true"
             android:fontFamily="serif"
             android:text="Déjà un compte ? Se connecter"
-            android:textColor="#2196F3"
+            android:textColor="#516EF3"
             android:textStyle="bold" />
 
     </LinearLayout>

@@ -139,8 +139,8 @@
                 android:layout_width="129dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
-                android:layout_marginEnd="23dp"
-                android:layout_marginRight="12dp"
+                android:layout_marginEnd="25dp"
+                android:layout_marginRight="90dp"
                 android:text="Annuler"
                 android:textColor="@color/nav_item_color"
                 app:backgroundTint="@color/chip_background" />
@@ -150,9 +150,10 @@
                 android:layout_width="129dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
-                android:text="Ajouter"
+                android:text="Modifier"
                 android:textColor="@android:color/white"
                 app:backgroundTint="@color/purple_500" />
+
         </LinearLayout>
 
     </LinearLayout>
