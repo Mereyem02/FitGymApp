@@ -31,6 +31,7 @@ import com.example.fitgym.data.model.Seance;
 import com.example.fitgym.ui.adapter.SeanceAdapter;
 import com.example.fitgym.ui.viewmodel.SeanceViewModel;
 import com.example.fitgym.data.dao.DAOCoach;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -42,7 +43,7 @@ public class ListeSeancesFragment extends Fragment {
     private SeanceAdapter adapter;
     private List<Seance> seanceList = new ArrayList<>();
     private EditText searchBar;
-    private Button btnAddSeance;
+    private FloatingActionButton btnAddSeance;
     private Spinner spinnerFilterCategorie;
 
     private SeanceViewModel seanceViewModel;

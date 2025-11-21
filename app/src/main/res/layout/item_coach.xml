@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:card_view="http://schemas.android.com/apk/res-auto"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -46,14 +45,14 @@
 
             <!-- NOTE ET AVIS -->
             <LinearLayout
-                android:layout_width="144dp"
+                android:layout_width="161dp"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <ImageView
-                    android:layout_width="16dp"
+                    android:layout_width="35dp"
                     android:layout_height="16dp"
                     android:contentDescription="Étoile"
                     android:src="@drawable/ic_star"
@@ -61,16 +60,16 @@
 
                 <TextView
                     android:id="@+id/coachRating"
-                    android:layout_width="25dp"
-                    android:layout_height="wrap_content"
+                    android:layout_width="125dp"
+                    android:layout_height="match_parent"
                     android:layout_marginStart="4dp"
                     android:textColor="#1F2937"
                     android:textSize="14sp" />
 
                 <TextView
                     android:id="@+id/coachReviewCount"
-                    android:layout_width="75dp"
-                    android:layout_height="wrap_content"
+                    android:layout_width="84dp"
+                    android:layout_height="match_parent"
                     android:layout_marginStart="4dp"
                     android:text=""
                     android:textColor="#6B7280"
