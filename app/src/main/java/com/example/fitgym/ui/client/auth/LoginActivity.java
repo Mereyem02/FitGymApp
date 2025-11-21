@@ -18,6 +18,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.fitgym.R;
+import com.example.fitgym.data.dao.DAOClient;
 import com.example.fitgym.data.db.DatabaseHelper;
 import com.example.fitgym.data.db.FirebaseHelper;
 import com.example.fitgym.data.model.Client;
@@ -55,16 +56,6 @@ public class LoginActivity extends AppCompatActivity {
         Animation formAnim = AnimationUtils.loadAnimation(this, R.anim.form_anim);
         rootLayout.startAnimation(formAnim);
 
-        Button btnSeConnecter = findViewById(R.id.btnSeConnecter1);
-        btnSeConnecter.setOnClickListener(v -> {
-            // bouton click animation
-            Animation clickAnim = AnimationUtils.loadAnimation(this, R.anim.button_click);
-            v.startAnimation(clickAnim);
-
-            // lancer la connexion après l'animation
-            v.postDelayed(this::loginClient, 150);
-        });
-
         mAuth = FirebaseAuth.getInstance();
         firebaseHelper = new FirebaseHelper();
         dbHelper = new DatabaseHelper(this);
@@ -92,11 +83,9 @@ public class LoginActivity extends AppCompatActivity {
         btnSeConnecter.setOnClickListener(v -> loginClient());
 
         tvGoToRegister.setOnClickListener(v -> {
-            Intent intent = new Intent(this, RegisterActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(this, RegisterActivity.class));
             overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
         });
-
 
         tvForgotPassword.setOnClickListener(v ->
                 startActivity(new Intent(this, RecoverPasswordActivity.class))
@@ -110,7 +99,6 @@ public class LoginActivity extends AppCompatActivity {
                         .build();
 
         googleSignInClient = GoogleSignIn.getClient(this, gso);
-
         btnGoogleSignIn.setOnClickListener(v -> googleSignIn());
     }
 
@@ -123,10 +111,12 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
+        DAOClient daoClient = new DAOClient(this);
+
         if (!isNetworkAvailable()) {
-            // Offline mode
-            Client client = dbHelper.getClient(email, password);
-            if (client != null) {
+            // Offline login
+            Client client = daoClient.obtenirClientParEmail(email);
+            if (client != null && client.getMotDePasse().equals(password)) {
                 Toast.makeText(this, "Connexion hors ligne réussie ✅", Toast.LENGTH_SHORT).show();
                 finish();
             } else {
@@ -135,32 +125,28 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        // Online Firebase authentication
+        // Online Firebase login
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (!task.isSuccessful()) {
                         Toast.makeText(this, "Identifiants incorrects (Firebase) ❌", Toast.LENGTH_SHORT).show();
-                        // Supprimer localement si existait
-                        dbHelper.deleteClient(email);
                         return;
                     }
 
                     FirebaseUser user = mAuth.getCurrentUser();
                     if (user == null) {
                         Toast.makeText(this, "Erreur de connexion", Toast.LENGTH_SHORT).show();
-                        dbHelper.deleteClient(email);
                         return;
                     }
 
                     firebaseHelper.getClientById(user.getUid(), client -> {
                         if (client != null) {
                             // Sync local database
-                            dbHelper.syncClient(client, password);
+                            client.setMotDePasse(password); // sauvegarde du mdp pour login offline
+                            daoClient.modifierClient(client); // correction : appel instance
                             Toast.makeText(this, "Bienvenue " + client.getNom() + " ✅", Toast.LENGTH_SHORT).show();
                             finish();
                         } else {
-                            // Supprimer local si Firebase n’a plus le compte
-                            dbHelper.deleteClient(email);
                             Toast.makeText(this, "Compte supprimé côté serveur ❌", Toast.LENGTH_SHORT).show();
                         }
                     });
@@ -175,8 +161,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void googleSignIn() {
-        Intent signInIntent = googleSignInClient.getSignInIntent();
-        startActivityForResult(signInIntent, RC_SIGN_IN);
+        startActivityForResult(googleSignInClient.getSignInIntent(), RC_SIGN_IN);
     }
 
     @Override
@@ -184,18 +169,14 @@ public class LoginActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == RC_SIGN_IN) {
-            Task<GoogleSignInAccount> task =
-                    GoogleSignIn.getSignedInAccountFromIntent(data);
-
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
                 GoogleSignInAccount account = task.getResult(Exception.class);
-
                 if (account != null) {
                     firebaseAuthWithGoogle(account);
                 } else {
                     Toast.makeText(this, "Erreur Google Sign-In ❌", Toast.LENGTH_SHORT).show();
                 }
-
             } catch (Exception e) {
                 e.printStackTrace();
                 Toast.makeText(this, "Connexion Google échouée ❌", Toast.LENGTH_SHORT).show();
@@ -204,12 +185,9 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
-        AuthCredential credential =
-                GoogleAuthProvider.getCredential(acct.getIdToken(), null);
-
+        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
-
                     if (!task.isSuccessful()) {
                         Toast.makeText(this, "Échec authentification Firebase ❌", Toast.LENGTH_SHORT).show();
                         return;
@@ -218,18 +196,16 @@ public class LoginActivity extends AppCompatActivity {
                     FirebaseUser user = mAuth.getCurrentUser();
                     if (user == null) return;
 
-                    String uid = user.getUid();
-                    String nom = user.getDisplayName();
-                    String email = user.getEmail();
-
                     Client client = new Client();
-                    client.setId(uid);
-                    client.setNom(nom);
-                    client.setEmail(email);
+                    client.setId(user.getUid());
+                    client.setNom(user.getDisplayName());
+                    client.setEmail(user.getEmail());
+                    client.setMotDePasse("");
 
+                    DAOClient daoClient = new DAOClient(this);
                     firebaseHelper.ajouterClient(client, success -> {
                         if (success) {
-                            dbHelper.syncClient(client, "");
+                            daoClient.modifierClient(client); // sauvegarde locale
                             Toast.makeText(this, "Connecté avec Google ✅", Toast.LENGTH_SHORT).show();
                             finish();
                         } else {

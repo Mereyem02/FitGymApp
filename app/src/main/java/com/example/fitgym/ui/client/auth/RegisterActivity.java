@@ -16,6 +16,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.fitgym.R;
+import com.example.fitgym.data.dao.DAOClient;
+import com.example.fitgym.data.db.DatabaseHelper;
 import com.example.fitgym.data.db.FirebaseHelper;
 import com.example.fitgym.data.model.Client;
 import com.example.fitgym.ui.viewmodel.ClientViewModel;
@@ -30,6 +32,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 
+import java.util.List;
+
 public class RegisterActivity extends AppCompatActivity {
 
     private EditText inputNom, inputEmail, inputTelephone, inputPassword;
@@ -43,18 +47,14 @@ public class RegisterActivity extends AppCompatActivity {
 
     private FirebaseAuth mAuth;
     private FirebaseHelper firebaseHelper;
-    @Override
-    public void finish() {
-        super.finish();
-        overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
-    }
-
+    private DatabaseHelper dbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_registre_client);
 
+        // -------------------- Views --------------------
         inputNom = findViewById(R.id.inputNom);
         inputEmail = findViewById(R.id.inputEmail);
         inputTelephone = findViewById(R.id.inputTelephone);
@@ -63,32 +63,37 @@ public class RegisterActivity extends AppCompatActivity {
         tvGoToLogin = findViewById(R.id.tvGoToLogin);
         btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn);
 
+        // -------------------- Instances --------------------
         clientViewModel = new ViewModelProvider(this).get(ClientViewModel.class);
         mAuth = FirebaseAuth.getInstance();
         firebaseHelper = new FirebaseHelper();
+        dbHelper = new DatabaseHelper(this);
 
+        // -------------------- Listeners --------------------
         tvGoToLogin.setOnClickListener(v -> finish());
 
+        btnRegister.setOnClickListener(v -> inscrireClient());
+        btnGoogleSignIn.setOnClickListener(v -> googleSignIn());
+
+        // -------------------- Google Sign-In --------------------
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
-
         googleSignInClient = GoogleSignIn.getClient(this, gso);
 
-        btnRegister.setOnClickListener(v -> inscrireClient());
-        btnGoogleSignIn.setOnClickListener(v -> googleSignIn());
+        // Sync auto des clients hors-ligne si internet dispo
+        if (hasInternet()) syncOfflineClients();
     }
 
-    // Vérifier Internet
+    // -------------------- Vérifier Internet --------------------
     private boolean hasInternet() {
-        ConnectivityManager cm = (ConnectivityManager)
-                getSystemService(Context.CONNECTIVITY_SERVICE);
-
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo net = cm.getActiveNetworkInfo();
         return net != null && net.isConnected();
     }
 
+    // -------------------- Inscription client --------------------
     private void inscrireClient() {
         String nom = inputNom.getText().toString().trim();
         String email = inputEmail.getText().toString().trim();
@@ -100,145 +105,101 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
-        // =========================
-        // MODE OFFLINE
-        // =========================
         if (!hasInternet()) {
+            // -------------------- Mode hors-ligne --------------------
             Client client = new Client();
-            client.setId(String.valueOf(System.currentTimeMillis())); // id temporaire
+            client.setId(String.valueOf(System.currentTimeMillis())); // ID local temporaire
             client.setNom(nom);
             client.setEmail(email);
             client.setTelephone(telephone);
             client.setMotDePasse(password);
             client.setSynced(false);
 
+            DAOClient dao = new DAOClient(this);
+            dao.ajouterClient(client);
             clientViewModel.inscrire(client);
-            Toast.makeText(this, "Compte enregistré hors-ligne", Toast.LENGTH_SHORT).show();
+
+            Toast.makeText(this, "Compte enregistré hors-ligne ✅", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
 
-        // =========================
-        // MODE ONLINE (FIREBASE)
-        // =========================
+        // -------------------- Mode en ligne --------------------
         mAuth.fetchSignInMethodsForEmail(email)
                 .addOnCompleteListener(task -> {
-
                     if (!task.isSuccessful()) {
                         Toast.makeText(this, "Erreur vérification email", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
-                    boolean isNewUser =
-                            task.getResult().getSignInMethods().isEmpty();
-
+                    boolean isNewUser = task.getResult().getSignInMethods().isEmpty();
                     if (!isNewUser) {
                         Toast.makeText(this, "Email déjà utilisé", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
-                    // Créer l’utilisateur
+                    // Créer compte Firebase Auth
                     mAuth.createUserWithEmailAndPassword(email, password)
                             .addOnCompleteListener(createTask -> {
                                 if (!createTask.isSuccessful()) {
-                                    Toast.makeText(
-                                            this,
-                                            "Erreur création compte: "
-                                                    + createTask.getException().getMessage(),
-                                            Toast.LENGTH_SHORT
-                                    ).show();
+                                    Toast.makeText(this,
+                                            "Erreur création compte: " + createTask.getException().getMessage(),
+                                            Toast.LENGTH_SHORT).show();
                                     return;
                                 }
 
                                 FirebaseUser firebaseUser = mAuth.getCurrentUser();
                                 if (firebaseUser == null) return;
 
-                                String uid = firebaseUser.getUid();
-
                                 Client client = new Client();
-                                client.setId(uid);
+                                client.setId(firebaseUser.getUid());
                                 client.setNom(nom);
                                 client.setEmail(email);
                                 client.setTelephone(telephone);
-                                client.setMotDePasse("");
+                                client.setMotDePasse(""); // ne pas stocker mot de passe Firebase
                                 client.setSynced(true);
 
+                                // Ajouter dans Firestore + local
                                 firebaseHelper.ajouterClient(client, success -> {
                                     if (success) {
+                                        dbHelper.syncClient(client, password); // sync local
                                         clientViewModel.inscrire(client);
-                                        Toast.makeText(this,
-                                                "Compte créé avec succès !",
-                                                Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(this, "Compte créé avec succès ✅", Toast.LENGTH_SHORT).show();
                                         finish();
                                     } else {
-                                        Toast.makeText(this,
-                                                "Erreur d'ajout Firebase",
-                                                Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(this, "Erreur ajout Firebase ❌", Toast.LENGTH_SHORT).show();
                                     }
                                 });
                             });
                 });
     }
 
-    // GOOGLE SIGN-IN
+    // -------------------- Google Sign-In --------------------
     private void googleSignIn() {
         Intent signInIntent = googleSignInClient.getSignInIntent();
         startActivityForResult(signInIntent, RC_SIGN_IN);
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode,
-                                    @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == RC_SIGN_IN) {
-            Task<GoogleSignInAccount> task =
-                    GoogleSignIn.getSignedInAccountFromIntent(data);
-
-            try {
-                GoogleSignInAccount account = task.getResult(Exception.class);
-                if (account != null) firebaseAuthWithGoogle(account);
-            } catch (Exception e) {
-                e.printStackTrace();
-                Toast.makeText(this,
-                        "Connexion Google échouée",
-                        Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
     private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
-
-        AuthCredential credential =
-                GoogleAuthProvider.getCredential(acct.getIdToken(), null);
-
+        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
-
                     if (!task.isSuccessful()) {
-                        Toast.makeText(this,
-                                "Échec authentification Firebase",
-                                Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Échec authentification Firebase ❌", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
                     FirebaseUser firebaseUser = mAuth.getCurrentUser();
                     if (firebaseUser == null) return;
 
-                    String uid = firebaseUser.getUid();
-                    String nom = firebaseUser.getDisplayName();
-                    String email = firebaseUser.getEmail();
-
                     Client client = new Client();
-                    client.setId(uid);
-                    client.setNom(nom);
-                    client.setEmail(email);
+                    client.setId(firebaseUser.getUid());
+                    client.setNom(firebaseUser.getDisplayName());
+                    client.setEmail(firebaseUser.getEmail());
                     client.setMotDePasse("");
                     client.setSynced(true);
 
-                    // Vérifier si déjà dans Firebase
-                    firebaseHelper.getClient(uid, existingClient -> {
-
+                    firebaseHelper.getClient(firebaseUser.getUid(), existingClient -> {
                         if (existingClient == null) {
                             firebaseHelper.ajouterClient(client, success -> {
                                 if (success) clientViewModel.inscrire(client);
@@ -247,11 +208,77 @@ public class RegisterActivity extends AppCompatActivity {
                             clientViewModel.inscrire(existingClient);
                         }
 
-                        Toast.makeText(this,
-                                "Connecté avec Google : " + email,
-                                Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Connecté avec Google : " + firebaseUser.getEmail(), Toast.LENGTH_SHORT).show();
                         finish();
                     });
                 });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode,
+                                    @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == RC_SIGN_IN) {
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            try {
+                GoogleSignInAccount account = task.getResult(Exception.class);
+                if (account != null) firebaseAuthWithGoogle(account);
+            } catch (Exception e) {
+                e.printStackTrace();
+                Toast.makeText(this, "Connexion Google échouée ❌", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    // -------------------- Synchronisation auto --------------------
+    private void syncOfflineClients() {
+        List<Client> offlineClients = dbHelper.getOfflineClients();
+        DAOClient daoClient = new DAOClient(this);
+
+        for (Client client : offlineClients) {
+            String email = client.getEmail();
+            String password = client.getMotDePasse();
+
+            // Vérifier si le compte existe déjà sur Firebase
+            mAuth.fetchSignInMethodsForEmail(email)
+                    .addOnCompleteListener(fetchTask -> {
+                        if (!fetchTask.isSuccessful()) return;
+
+                        boolean isNew = fetchTask.getResult().getSignInMethods().isEmpty();
+
+                        if (!isNew) {
+                            // Compte existant → juste marquer comme synchronisé localement
+                            client.setSynced(true);
+                            daoClient.modifierClient(client);
+                            return;
+                        }
+
+                        // Créer le compte sur Firebase
+                        mAuth.createUserWithEmailAndPassword(email, password)
+                                .addOnCompleteListener(createTask -> {
+                                    if (!createTask.isSuccessful()) return;
+
+                                    FirebaseUser firebaseUser = mAuth.getCurrentUser();
+                                    if (firebaseUser == null) return;
+
+                                    client.setId(firebaseUser.getUid());
+
+                                    // Ajouter dans Firestore
+                                    firebaseHelper.ajouterClient(client, success -> {
+                                        if (success) {
+                                            client.setSynced(true);
+                                            daoClient.modifierClient(client); // mettre à jour ID + synced
+                                        }
+                                    });
+                                });
+                    });
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (hasInternet()) syncOfflineClients();
     }
 }

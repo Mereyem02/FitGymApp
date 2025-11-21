@@ -348,6 +348,29 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
         return client;
     }
+    public List<Client> getOfflineClients() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor c = db.rawQuery("SELECT * FROM Client", null);
+        List<Client> offlineClients = new ArrayList<>();
+
+        while (c.moveToNext()) {
+            String id = c.getString(c.getColumnIndexOrThrow("id"));
+            // Si l'id n'est pas un UID Firebase (exemple hors ligne temporaire)
+            if (!id.matches("^[a-zA-Z0-9\\-]{28}$")) { // Firebase UID length ~28
+                Client client = new Client();
+                client.setId(id);
+                client.setNom(c.getString(c.getColumnIndexOrThrow("nom")));
+                client.setEmail(c.getString(c.getColumnIndexOrThrow("email")));
+                client.setMotDePasse(c.getString(c.getColumnIndexOrThrow("motDePasse")));
+                offlineClients.add(client);
+            }
+        }
+
+        c.close();
+        db.close();
+        return offlineClients;
+    }
+
     public boolean deleteClient(String email) {
         SQLiteDatabase db = this.getWritableDatabase();
         int rows = db.delete("Client", "email=?", new String[]{email});
@@ -358,7 +381,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void syncClient(Client client, String password) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put("id", client.getId());
         values.put("nom", client.getNom());
         values.put("email", client.getEmail());
         values.put("motDePasse", password); // <- nom exact dans la table
