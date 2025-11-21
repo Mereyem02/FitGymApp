@@ -63,7 +63,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
-                    android:background="@drawable/bg_badge_noir"
+                    android:background="@drawable/bg_filter_button"
                     android:padding="4dp"
                     android:textColor="@android:color/white"
                     android:text="Intermédiaire"
