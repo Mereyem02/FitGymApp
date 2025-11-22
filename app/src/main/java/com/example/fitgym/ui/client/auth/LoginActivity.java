@@ -6,14 +6,10 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.MotionEvent;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.TextView;
-import android.widget.Toast;
-
+import android.widget.*;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -21,9 +17,7 @@ import com.example.fitgym.R;
 import com.example.fitgym.data.dao.DAOClient;
 import com.example.fitgym.data.db.DatabaseHelper;
 import com.example.fitgym.data.db.FirebaseHelper;
-import com.example.fitgym.data.model.Admin;
 import com.example.fitgym.data.model.Client;
-import com.example.fitgym.ui.admin.LoginAdminActivity;
 import com.example.fitgym.ui.admin.MainActivityAdmin;
 import com.google.android.gms.auth.api.signin.*;
 import com.google.android.gms.common.SignInButton;
@@ -55,6 +49,7 @@ public class LoginActivity extends AppCompatActivity {
         tvGoToRegister = findViewById(R.id.tvGoToRegister1);
         tvForgotPassword = findViewById(R.id.tvForgotPassword);
         btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn);
+
         LinearLayout rootLayout = findViewById(R.id.rootLayout);
         Animation formAnim = AnimationUtils.loadAnimation(this, R.anim.form_anim);
         rootLayout.startAnimation(formAnim);
@@ -63,13 +58,15 @@ public class LoginActivity extends AppCompatActivity {
         firebaseHelper = new FirebaseHelper();
         dbHelper = new DatabaseHelper(this);
 
-        // Toggle password visibility
+        // Toggle mot de passe visible/invisible
         etPassword.setOnTouchListener((v, event) -> {
             final int DRAWABLE_RIGHT = 2;
-            if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
-                if (event.getRawX() >= (etPassword.getRight() - etPassword.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width())) {
-                    if ((etPassword.getInputType() & android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD) ==
-                            android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD) {
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                if (event.getRawX() >= (etPassword.getRight()
+                        - etPassword.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width())) {
+
+                    if ((etPassword.getInputType() & android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD)
+                            == android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD) {
                         etPassword.setInputType(android.text.InputType.TYPE_CLASS_TEXT |
                                 android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
                     } else {
@@ -90,16 +87,12 @@ public class LoginActivity extends AppCompatActivity {
             overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
         });
 
-        tvForgotPassword.setOnClickListener(v ->
-                startActivity(new Intent(this, RecoverPasswordActivity.class))
-        );
+        tvForgotPassword.setOnClickListener(v -> startActivity(new Intent(this, RecoverPasswordActivity.class)));
 
-        // Google Sign-In config
-        GoogleSignInOptions gso =
-                new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                        .requestIdToken(getString(R.string.default_web_client_id))
-                        .requestEmail()
-                        .build();
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(getString(R.string.default_web_client_id))
+                .requestEmail()
+                .build();
 
         googleSignInClient = GoogleSignIn.getClient(this, gso);
         btnGoogleSignIn.setOnClickListener(v -> googleSignIn());
@@ -114,78 +107,142 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-
+        Client localClient = dbHelper.getClientByEmail(email);
 
         if (!isNetworkAvailable()) {
-            DAOClient daoClient = new DAOClient(this);
-            Client localClient = daoClient.obtenirClientParEmail(email);
-            // OFFLINE login
-            if (localClient != null && password.equals(localClient.getMotDePasse())) {
-                Toast.makeText(this, "Connexion hors ligne réussie ✅", Toast.LENGTH_SHORT).show();
-                finish();
-            } else {
-                Toast.makeText(this, "Identifiants incorrects (offline) ❌", Toast.LENGTH_SHORT).show();
-            }
-        }
-        else {
-            // MODE ONLINE → Firebase
-            FirebaseHelper firebaseHelper = new FirebaseHelper();
-            firebaseHelper.getClient(new FirebaseHelper.ClientCallback() {
-                @Override
-                public void onCallback(Client client) {
-                    if (client != null && client.getEmail().equals(email) && client.getMotDePasse().equals(password)) {
-                        runOnUiThread(() -> {
-                            Toast.makeText(LoginActivity.this, "Bienvenue " + client.getEmail() + " ! ✅", Toast.LENGTH_SHORT).show();
-                            dbHelper.syncClient(client);
-                            startActivity(new Intent(LoginActivity.this, MainActivityAdmin.class));
-                            finish();
-                        });
-                    } else {
-                        runOnUiThread(() ->
-                                Toast.makeText(LoginActivity.this, "Login ou mot de passe incorrect ❌", Toast.LENGTH_SHORT).show()
-                        );
-                    }
+            if (localClient != null) {
+                if (localClient.isGoogleSignIn()) {
+                    // Google déjà utilisé → login hors ligne
+                    proceedToMainActivity(localClient, "(offline Google)");
+                    return;
                 }
+                // Email/Password hors ligne
+                if (password.equals(localClient.getMotDePasse())) {
+                    proceedToMainActivity(localClient, "(offline)");
+                    return;
+                }
+            }
 
-            });
+            // Connexion hors ligne
+            if (localClient != null && localClient.getMotDePasse().trim().equals(password)) {
+                proceedToMainActivity(localClient, "(offline)");
+            } else {
+                Toast.makeText(this, "Email ou mot de passe incorrect ❌ (offline)", Toast.LENGTH_SHORT).show();
+            }
+            return;
         }
+
+        // Si compte local non synchronisé → créer sur Firebase
+        if (localClient != null && !localClient.isSynced()) {
+            mAuth.fetchSignInMethodsForEmail(email).addOnCompleteListener(fetchTask -> {
+                boolean existsOnFirebase = fetchTask.getResult() != null &&
+                        fetchTask.getResult().getSignInMethods() != null &&
+                        !fetchTask.getResult().getSignInMethods().isEmpty();
+
+                if (existsOnFirebase) {
+                    // Compte existe sur Firebase → login classique
+                    mAuth.signInWithEmailAndPassword(email, password)
+                            .addOnCompleteListener(loginTask -> {
+                                if (!loginTask.isSuccessful()) {
+                                    Toast.makeText(this, "Mot de passe incorrect pour le compte en ligne ❌", Toast.LENGTH_LONG).show();
+                                    return;
+                                }
+                                FirebaseUser user = mAuth.getCurrentUser();
+                                if (user == null) return;
+
+                                localClient.setId(user.getUid());
+                                localClient.setSynced(true);
+                                new DAOClient(this).modifierClient(localClient);
+
+                                firebaseHelper.ajouterClient(localClient, success -> {
+                                    dbHelper.syncClient(localClient);
+                                    proceedToMainActivity(localClient, "(synced)");
+                                });
+                            });
+                } else {
+                    // Compte n’existe pas sur Firebase → créer
+                    mAuth.createUserWithEmailAndPassword(email, password)
+                            .addOnCompleteListener(createTask -> {
+                                if (!createTask.isSuccessful()) {
+                                    Toast.makeText(this, "Erreur synchronisation Firebase: " + createTask.getException().getMessage(), Toast.LENGTH_LONG).show();
+                                    return;
+                                }
+
+                                FirebaseUser user = mAuth.getCurrentUser();
+                                if (user == null) return;
+
+                                localClient.setId(user.getUid());
+                                localClient.setSynced(true);
+                                new DAOClient(this).modifierClient(localClient);
+
+                                firebaseHelper.ajouterClient(localClient, success -> {
+                                    dbHelper.syncClient(localClient);
+                                    proceedToMainActivity(localClient, "(synced)");
+                                });
+                            });
+                }
+            });
+            return;
+        }
+
+        // Connexion en ligne classique
+        mAuth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(task -> {
+                    if (!task.isSuccessful()) {
+                        Toast.makeText(this, "Email ou mot de passe incorrect ❌", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    FirebaseUser user = mAuth.getCurrentUser();
+                    if (user == null) return;
+
+                    firebaseHelper.getClientById(user.getUid(), client -> {
+                        if (client != null) {
+                            dbHelper.syncClient(client);
+                            proceedToMainActivity(client, "");
+                        } else {
+                            Client newClient = new Client();
+                            newClient.setId(user.getUid());
+                            newClient.setNom(user.getDisplayName() != null ? user.getDisplayName() : "Utilisateur");
+                            newClient.setEmail(email);
+                            newClient.setMotDePasse(password);
+                            newClient.setSynced(true);
+
+                            firebaseHelper.ajouterClient(newClient, success -> {
+                                dbHelper.syncClient(newClient);
+                                proceedToMainActivity(newClient, "");
+                            });
+                        }
+                    });
+                });
     }
 
 
+    private void proceedToMainActivity(Client client, String extra) {
+        Toast.makeText(this, "Bienvenue " + client.getNom() + " " + extra + " ✅", Toast.LENGTH_SHORT).show();
+        startActivity(new Intent(this, MainActivityAdmin.class));
+        finish();
+    }
 
     private boolean isNetworkAvailable() {
-        ConnectivityManager cm =
-                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo net = cm.getActiveNetworkInfo();
-        return net != null && net.isConnected();
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = cm.getActiveNetworkInfo();
+        return networkInfo != null && networkInfo.isConnected();
     }
 
+    // =================== GOOGLE SIGN-IN ===================
     private void googleSignIn() {
-        startActivityForResult(googleSignInClient.getSignInIntent(), RC_SIGN_IN);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == RC_SIGN_IN) {
-            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
-            try {
-                GoogleSignInAccount account = task.getResult(Exception.class);
-                if (account != null) {
-                    firebaseAuthWithGoogle(account);
-                } else {
-                    Toast.makeText(this, "Erreur Google Sign-In ❌", Toast.LENGTH_SHORT).show();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                Toast.makeText(this, "Connexion Google échouée ❌", Toast.LENGTH_SHORT).show();
-            }
+        if (!isNetworkAvailable()) {
+            Toast.makeText(this, "Google Sign-In nécessite Internet ❌", Toast.LENGTH_SHORT).show();
+            return;
         }
+        Intent signInIntent = googleSignInClient.getSignInIntent();
+        startActivityForResult(signInIntent, RC_SIGN_IN);
     }
 
     private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
         AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
                     if (!task.isSuccessful()) {
@@ -196,22 +253,46 @@ public class LoginActivity extends AppCompatActivity {
                     FirebaseUser user = mAuth.getCurrentUser();
                     if (user == null) return;
 
-                    Client client = new Client();
-                    client.setId(user.getUid());
-                    client.setNom(user.getDisplayName());
-                    client.setEmail(user.getEmail());
-                    client.setMotDePasse("");
+                    firebaseHelper.getClientById(user.getUid(), existingClient -> {
+                        runOnUiThread(() -> {
+                            if (existingClient != null) {
+                                dbHelper.syncClient(existingClient);
+                                Toast.makeText(this, "Connecté avec Google ✅", Toast.LENGTH_SHORT).show();
+                                startActivity(new Intent(this, MainActivityAdmin.class));
+                                finish();
+                            } else {
+                                Client client = new Client();
+                                client.setId(user.getUid());
+                                client.setNom(user.getDisplayName());
+                                client.setEmail(user.getEmail());
+                                client.setMotDePasse("GOOGLE_SIGN_IN");
+                                client.setSynced(true);
 
-                    DAOClient daoClient = new DAOClient(this);
-                    firebaseHelper.ajouterClient(client, success -> {
-                        if (success) {
-                            daoClient.modifierClient(client); // sauvegarde locale
-                            Toast.makeText(this, "Connecté avec Google ✅", Toast.LENGTH_SHORT).show();
-                            finish();
-                        } else {
-                            Toast.makeText(this, "Erreur ajout client Firebase ❌", Toast.LENGTH_SHORT).show();
-                        }
+                                firebaseHelper.ajouterClient(client, success -> {
+                                    dbHelper.syncClient(client);
+                                    Toast.makeText(this, "Connecté avec Google ✅", Toast.LENGTH_SHORT).show();
+                                    startActivity(new Intent(this, MainActivityAdmin.class));
+                                    finish();
+                                });
+                            }
+                        });
                     });
                 });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == RC_SIGN_IN) {
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            try {
+                GoogleSignInAccount account = task.getResult(Exception.class);
+                if (account != null) firebaseAuthWithGoogle(account);
+                else Toast.makeText(this, "Erreur Google Sign-In ❌", Toast.LENGTH_SHORT).show();
+            } catch (Exception e) {
+                Toast.makeText(this, "Connexion Google échouée ❌", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 }

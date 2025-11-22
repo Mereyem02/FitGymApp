@@ -148,5 +148,7 @@ public class DAOClient {
     }
 
 
-
+    public List<Client> getAllOfflineClients() {
+        return dbHelper.getOfflineClients();
+    }
 }

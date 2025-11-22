@@ -3,6 +3,7 @@ package com.example.fitgym.data.db;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
@@ -20,7 +21,7 @@ import java.util.UUID;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     public static final String DATABASE_NAME = "sport_app.db";
-    public static final int DATABASE_VERSION = 5;
+    public static final int DATABASE_VERSION = 6;
 
     private static final String TABLE_ADMIN = "Admin";
 
@@ -54,10 +55,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                 "nom TEXT NOT NULL," +
                 "email TEXT NOT NULL UNIQUE," +
-                "motDePasse TEXT NOT NULL," +  // <--- ici
-                "telephone TEXT" +
+                "motDePasse TEXT NOT NULL," +
+                "telephone TEXT," +
+                "synced INTEGER DEFAULT 0" +
                 ");";
         db.execSQL(createClientTable);
+
+
         String CREATE_TABLE_CATEGORIES = "CREATE TABLE categories (" +
                 "categorieId TEXT PRIMARY KEY, " +
                 "nom TEXT, " +
@@ -82,11 +86,27 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     }
 
+
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        if (oldVersion < 6) {
+            // Vérifie si la table Client existe avant de faire ALTER
+            Cursor c = db.rawQuery(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name='Client'", null
+            );
+            boolean clientExists = c.getCount() > 0;
+            c.close();
+            if (clientExists) {
+                try {
+                    db.execSQL("ALTER TABLE Client ADD COLUMN synced INTEGER DEFAULT 0");
+                } catch (Exception e) {
+                    e.printStackTrace(); // ignore si la colonne existe déjà
+                }
+            }
+        }
+
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_ADMIN);
         db.execSQL("DROP TABLE IF EXISTS Coach");
-        db.execSQL("DROP TABLE IF EXISTS Client");
         db.execSQL("DROP TABLE IF EXISTS seances");
         db.execSQL("DROP TABLE IF EXISTS categories");
         onCreate(db);
@@ -330,46 +350,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
         return c;
     }
-    public Client getClient(String email, String password) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor c = db.rawQuery(
-                "SELECT * FROM Client WHERE email=? AND motDePasse=?",
-                new String[]{email, password}
-        );
 
-        Client client = null;
-        if (c != null && c.moveToFirst()) {
-            client = new Client();
-            client.setId(c.getString(c.getColumnIndexOrThrow("id")));
-            client.setNom(c.getString(c.getColumnIndexOrThrow("nom")));
-            client.setEmail(c.getString(c.getColumnIndexOrThrow("email")));
-            c.close();
-        }
-        db.close();
-        return client;
-    }
-    public List<Client> getOfflineClients() {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor c = db.rawQuery("SELECT * FROM Client", null);
-        List<Client> offlineClients = new ArrayList<>();
-
-        while (c.moveToNext()) {
-            String id = c.getString(c.getColumnIndexOrThrow("id"));
-            // Si l'id n'est pas un UID Firebase (exemple hors ligne temporaire)
-            if (!id.matches("^[a-zA-Z0-9\\-]{28}$")) { // Firebase UID length ~28
-                Client client = new Client();
-                client.setId(id);
-                client.setNom(c.getString(c.getColumnIndexOrThrow("nom")));
-                client.setEmail(c.getString(c.getColumnIndexOrThrow("email")));
-                client.setMotDePasse(c.getString(c.getColumnIndexOrThrow("motDePasse")));
-                offlineClients.add(client);
-            }
-        }
-
-        c.close();
-        db.close();
-        return offlineClients;
-    }
 
     public boolean deleteClient(String email) {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -378,14 +359,94 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return rows > 0;
     }
 
+    // Dans DatabaseHelper.java
     public void syncClient(Client client) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put("nom", client.getNom());
-        values.put("email", client.getEmail());
 
-        db.insertWithOnConflict("Client", null, values, SQLiteDatabase.CONFLICT_REPLACE);
+        values.put("synced", client.isSynced() ? 1 : 0);
+        values.put("nom", client.getNom());
+        values.put("email", client.getEmail() != null ? client.getEmail().trim() : "");
+        values.put("motDePasse", client.getMotDePasse());
+        values.put("telephone", client.getTelephone());
+
+        // update existant
+        int rows = db.update("Client", values, "email = ?", new String[]{client.getEmail().trim()});
+
+        if (rows == 0) {
+            try {
+                db.insertOrThrow("Client", null, values);
+            } catch (SQLiteConstraintException e) {
+                db.update("Client", values, "email = ?", new String[]{client.getEmail().trim()});
+            }
+        }
+
         db.close();
     }
+
+    public Client getClient(String email, String password) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(
+                "SELECT * FROM Client WHERE email = ? AND motDePasse = ?",
+                new String[]{email, password}
+        );
+
+        Client client = null;
+        if (cursor.moveToFirst()) {
+            client = new Client();
+            client.setId(cursor.getString(cursor.getColumnIndexOrThrow("id")));
+            client.setNom(cursor.getString(cursor.getColumnIndexOrThrow("nom")));
+            client.setEmail(cursor.getString(cursor.getColumnIndexOrThrow("email")));
+            client.setMotDePasse(cursor.getString(cursor.getColumnIndexOrThrow("motDePasse")));
+            client.setTelephone(cursor.getString(cursor.getColumnIndexOrThrow("telephone")));
+            client.setSynced(cursor.getInt(cursor.getColumnIndexOrThrow("synced")) == 1);
+        }
+
+        cursor.close();
+        db.close();
+        return client;
+    }
+
+    public Client getClientByEmail(String email) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT * FROM Client WHERE email = ?", new String[]{email});
+
+        Client client = null;
+        if (cursor.moveToFirst()) {
+            client = new Client();
+            client.setId(cursor.getString(cursor.getColumnIndexOrThrow("id")));
+            client.setNom(cursor.getString(cursor.getColumnIndexOrThrow("nom")));
+            client.setEmail(cursor.getString(cursor.getColumnIndexOrThrow("email")));
+            client.setMotDePasse(cursor.getString(cursor.getColumnIndexOrThrow("motDePasse")));
+            client.setTelephone(cursor.getString(cursor.getColumnIndexOrThrow("telephone")));
+            client.setSynced(cursor.getInt(cursor.getColumnIndexOrThrow("synced")) == 1);
+        }
+
+        cursor.close();
+        db.close();
+        return client;
+    }
+
+    public List<Client> getOfflineClients() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor c = db.rawQuery("SELECT * FROM Client WHERE synced = 0", null);
+        List<Client> offlineClients = new ArrayList<>();
+
+        while (c.moveToNext()) {
+            Client client = new Client();
+            client.setId(c.getString(c.getColumnIndexOrThrow("id")));
+            client.setNom(c.getString(c.getColumnIndexOrThrow("nom")));
+            client.setEmail(c.getString(c.getColumnIndexOrThrow("email")));
+            client.setMotDePasse(c.getString(c.getColumnIndexOrThrow("motDePasse")));
+            client.setTelephone(c.getString(c.getColumnIndexOrThrow("telephone")));
+            client.setSynced(false);
+            offlineClients.add(client);
+        }
+
+        c.close();
+        db.close();
+        return offlineClients;
+    }
+
 
 }

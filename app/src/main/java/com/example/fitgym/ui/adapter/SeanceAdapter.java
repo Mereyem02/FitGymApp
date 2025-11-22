@@ -178,6 +178,12 @@ public class SeanceAdapter extends RecyclerView.Adapter<SeanceAdapter.SeanceView
                 return R.drawable.musculation;
             case "pilates":
                 return R.drawable.pilates;
+            case "zumba":
+                return R.drawable.zumba;
+            case "crossfit":
+                return R.drawable.crossfit;
+            case "cardio":
+                return R.drawable.cardio;
             default:
                 return R.drawable.default_image;
         }

@@ -1,4 +1,5 @@
 package com.example.fitgym.ui.admin;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.content.Context;
@@ -33,7 +34,27 @@ public class LoginAdminActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
 
         dbHelper = new DatabaseHelper(this);
+        // Toggle mot de passe visible/invisible
+        etPassword.setOnTouchListener((v, event) -> {
+            final int DRAWABLE_RIGHT = 2;
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                if (event.getRawX() >= (etPassword.getRight()
+                        - etPassword.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width())) {
 
+                    if ((etPassword.getInputType() & android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD)
+                            == android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD) {
+                        etPassword.setInputType(android.text.InputType.TYPE_CLASS_TEXT |
+                                android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                    } else {
+                        etPassword.setInputType(android.text.InputType.TYPE_CLASS_TEXT |
+                                android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+                    }
+                    etPassword.setSelection(etPassword.getText().length());
+                    return true;
+                }
+            }
+            return false;
+        });
         btnSeConnecter.setOnClickListener(v -> {
             String login = etLogin.getText().toString().trim();
             String password = etPassword.getText().toString().trim();
