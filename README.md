@@ -8,11 +8,10 @@
 
 ## 📱 Demo | Démonstration
 
-🚧 **Demo coming soon**
+🚧 **Demo**
 
 (https://www.loom.com/share/e6718523c5714c3290307bd7ecbd337c)
 
-(https://www.loom.com/share/e6718523c5714c3290307bd7ecbd337c)
 ---
 
 ## 💡 About FitGym | À propos de FitGym
