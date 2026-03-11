@@ -10,10 +10,9 @@
 
 🚧 **Demo coming soon**
 
-A short demo video or GIF of the application will be added soon.
+(https://www.loom.com/share/e6718523c5714c3290307bd7ecbd337c)
 
-Une démonstration vidéo ou GIF de l'application sera ajoutée prochainement.
-
+(https://www.loom.com/share/e6718523c5714c3290307bd7ecbd337c)
 ---
 
 ## 💡 About FitGym | À propos de FitGym
